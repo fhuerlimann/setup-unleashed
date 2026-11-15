@@ -91,15 +91,30 @@ body {
 button.chip { cursor: pointer; }
 button.chip:disabled { opacity: 0.4; cursor: default; }
 button.chip[aria-pressed="true"] { background: var(--sel-bg); color: var(--sel-fg); border-color: var(--sel-line); }
-.dial { position: absolute; left: 12px; bottom: 10px; display: flex; gap: 6px 18px; font-family: var(--f-mono); font-size: 12px; pointer-events: none; flex-wrap: wrap; max-width: calc(100% - 190px); text-shadow: 0 0 6px var(--scene); }
+.dial { position: absolute; left: 12px; bottom: 10px; display: flex; gap: 4px 16px; font-family: var(--f-mono); font-size: 12px; pointer-events: none; flex-wrap: wrap; align-items: baseline; max-width: calc(100% - 190px); padding: 7px 10px; border: 1px solid var(--line); border-radius: 3px; background: color-mix(in srgb, var(--panel) 78%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.status { position: absolute; right: 12px; bottom: 170px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: 55%; pointer-events: none; }
 .dial span { color: var(--muted); }
 .dial b { font-weight: 500; font-variant-numeric: tabular-nums; }
 .dial .big b { font-size: 20px; }
 #map { position: absolute; right: 12px; bottom: 10px; width: 150px; height: 150px; border-radius: 4px; background: color-mix(in srgb, var(--panel) 80%, transparent); border: 1px solid var(--line); pointer-events: none; }
-.touch { position: absolute; inset: auto 0 0 0; display: none; justify-content: space-between; padding: 0 12px 176px; pointer-events: none; }
-.touch div { display: flex; gap: 8px; }
-.touch button { pointer-events: auto; width: 58px; height: 58px; border-radius: 50%; font-size: 13px; font-weight: 600; background: color-mix(in srgb, var(--panel) 85%, transparent); touch-action: none; user-select: none; -webkit-user-select: none; }
+/* thumb controls (touch screens): drag the left pad sideways to steer, the right pad up for throttle and down to brake */
+.touch { position: absolute; inset: auto 0 0 0; display: none; justify-content: space-between; align-items: flex-end; padding: 0 max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); pointer-events: none; }
+.pad { position: relative; pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; border: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 62%, transparent); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.pad.steer { width: 190px; height: 76px; border-radius: 38px; }
+.pad.pedal { width: 76px; height: 176px; border-radius: 38px; background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 16%, transparent), transparent 45%, transparent 55%, color-mix(in srgb, var(--coral) 18%, transparent)), color-mix(in srgb, var(--panel) 62%, transparent); }
+.pad .knob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; border: 2px solid var(--ink); background: color-mix(in srgb, var(--panel) 70%, transparent); transition: transform .12s ease-out; }
+.pad.active .knob { transition: none; border-color: var(--accent); }
+.pad.pedal.active.brk .knob { border-color: var(--coral); }
+.pad .lbl { position: absolute; font-family: var(--f-display); font-weight: 600; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.pad .lbl.l { left: 14px; top: 50%; transform: translateY(-50%); } .pad .lbl.r { right: 14px; top: 50%; transform: translateY(-50%); }
+.pad .lbl.up { top: 12px; left: 50%; transform: translateX(-50%); color: var(--accent); } .pad .lbl.dn { bottom: 12px; left: 50%; transform: translateX(-50%); color: var(--coral); }
 @media (pointer: coarse) { .touch.show { display: flex; } }
+/* touch screens of any size: keep the bottom corners free for the thumbs */
+@media (pointer: coarse) {
+  .view:has(.touch.show) .dial { top: 74px; bottom: auto; }
+  .view:has(.touch.show) #map { top: 74px; bottom: auto; }
+  .view:has(.touch.show) .status { left: 10px; right: 10px; top: 46%; bottom: auto; max-width: none; justify-content: center; }
+}
 .scope { border: 1px solid var(--line); border-radius: 3px; background: var(--panel); position: relative; min-height: 0; }
 #chart { width: 100%; height: 100%; display: block; }
 
@@ -213,12 +228,33 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
   .stage { grid-template-rows: auto 190px; }
   .view { height: 62vh; min-height: 360px; }
   .console { overflow: visible; }
-  .hud h1 { font-size: 17px; }
+  .view { height: min(76svh, 640px); min-height: 440px; }
+}
+/* compact HUD for phones (portrait, and landscape where the height is small) */
+@media (max-width: 860px), (pointer: coarse) and (max-height: 520px) {
+  .hud { left: 10px; top: 8px; max-width: 60%; }
+  .hud h1 { font-size: 15px; }
+  .hud h1::after { width: 32px; height: 3px; margin-top: 3px; }
   .hud p { display: none; }
-  #map { width: 104px; height: 104px; }
-  .dial { max-width: calc(100% - 132px); gap: 4px 12px; font-size: 11px; }
+  .chips { left: 10px; right: 10px; top: 36px; max-width: none; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chips .chip { flex: none; font-size: 10px; padding: 4px 7px; }
+  .status { left: 10px; right: 10px; top: 46%; bottom: auto; max-width: none; justify-content: center; }
+  .dial { top: 66px; bottom: auto; left: 10px; max-width: calc(100% - 118px); gap: 2px 12px; font-size: 11px; padding: 5px 8px; }
   .dial .big b { font-size: 17px; }
-  .touch { padding-bottom: 128px; }
+  .dial .lo { display: none; }
+  #map { top: 66px; bottom: auto; right: 10px; width: 92px; height: 92px; }
+}
+/* phone in landscape: the 3D view fills the height, the console sits beside it, the telemetry strip is dropped */
+@media (pointer: coarse) and (max-height: 520px) {
+  html, body { height: 100%; }
+  body { padding-block: 6px; }
+  .app { grid-template-columns: minmax(0, 1fr) 300px; height: 100%; gap: 8px; }
+  .stage { grid-template-rows: minmax(0, 1fr); }
+  .scope { display: none; }
+  .view { height: auto; min-height: 0; }
+  .console { overflow-y: auto; }
+  .pad.steer { width: 170px; height: 68px; } .pad.pedal { width: 68px; height: 150px; }
 }
 @media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
 </style>
@@ -241,6 +277,8 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
         <button class="chip" id="bFrame" type="button" aria-pressed="false">Chassis</button>
         <button class="chip" id="bShell" type="button" aria-pressed="false" disabled>Body shell</button>
         <button class="chip" id="bWheel" type="button" aria-pressed="false">Steering wheel</button>
+      </div>
+      <div class="status" id="status" aria-live="polite">
         <span class="chip on" id="chipOff" hidden>Off track</span>
         <span class="chip on" id="chipBack" hidden>Back on track</span>
         <span class="chip on" id="chipOver" hidden>Catching oversteer</span>
@@ -252,20 +290,24 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
       </div>
       <div class="dial">
         <div class="big circ"><span>Speed </span><b id="dSpeed">0</b> km/h</div>
-        <div class="circ"><span>Lat </span><b id="dLat">0.00</b> g</div>
-        <div class="circ"><span>Steer </span><b id="dSteer">0.0</b>°</div>
+        <div class="circ lo"><span>Lat </span><b id="dLat">0.00</b> g</div>
+        <div class="circ lo"><span>Steer </span><b id="dSteer">0.0</b>°</div>
         <div class="circ"><span>Lap </span><b id="dLap">–</b></div>
-        <div class="circ"><span>Last </span><b id="dLast">–</b></div>
+        <div class="circ lo"><span>Last </span><b id="dLast">–</b></div>
         <div class="circ"><span>Best </span><b id="dBest">–</b></div>
         <div class="circ"><span>Δ best </span><b id="dDelta">–</b></div>
-        <div><span>Roll </span><b id="dRoll">0.00</b>°</div>
-        <div><span>Pitch (+ nose up) </span><b id="dPitch">0.00</b>°</div>
+        <div class="lo"><span>Roll </span><b id="dRoll">0.00</b>°</div>
+        <div class="lo"><span>Pitch (+ nose up) </span><b id="dPitch">0.00</b>°</div>
         <div class="rig"><span>Heave </span><b id="dHeave">0</b> mm</div>
       </div>
       <canvas id="map" aria-label="Track map with the car's position"></canvas>
       <div class="touch" id="touch">
-        <div><button type="button" data-k="left" aria-label="Steer left">◀</button><button type="button" data-k="right" aria-label="Steer right">▶</button></div>
-        <div><button type="button" data-k="brake">Brake</button><button type="button" data-k="gas">Gas</button></div>
+        <div class="pad steer" id="padSteer" role="slider" aria-label="Steering: drag left or right" aria-valuemin="-100" aria-valuemax="100" aria-valuenow="0">
+          <span class="lbl l">Left</span><span class="lbl r">Right</span><i class="knob"></i>
+        </div>
+        <div class="pad pedal" id="padPedal" role="slider" aria-label="Pedals: drag up for throttle, down to brake" aria-valuemin="-100" aria-valuemax="100" aria-valuenow="0">
+          <span class="lbl up">Gas</span><span class="lbl dn">Brake</span><i class="knob"></i>
+        </div>
       </div>
     </div>
     <div class="scope"><canvas id="chart" aria-label="Telemetry over the last 5 seconds: body roll and pitch; on the circuit, steering, throttle and brake (on the test rig, tire load at each corner)"></canvas></div>
@@ -1125,6 +1167,8 @@ function locate() {
 // ---------- Driver ----------
 let driver = 'auto';
 const keys = { left: false, right: false, gas: false, brake: false };
+// thumb controls: analog steering (-1 right … +1 left) and pedal (+1 full throttle … -1 full brake), only while touched
+const touchIn = { steer: 0, steerOn: false, pedal: 0, pedalOn: false };
 let steerIn = 0, stuck = 0;
 const aid = { over: 0, under: 0, holdO: 0, holdU: 0 };   // hold: keeps the HUD chip lit briefly so it doesn't flicker
 // ---------- Autopilot pedals: planned braking and throttle ----------
@@ -1248,13 +1292,15 @@ function drive(dt) {
     stuck = (beta > 1.0 || st.u < 2) ? stuck + dt : 0;
     if (stuck > 2.5) { if (skill === 'learn') learnPenalty(nearIdx, 0.1, 70); placeCar(nearIdx, 12); stuck = 0; lap.valid = false; }
   } else {
-    const tgt = (keys.left ? 1 : 0) - (keys.right ? 1 : 0);
-    const rate = tgt === 0 ? 3.5 : (Math.sign(tgt) !== Math.sign(steerIn) && steerIn !== 0 ? 4 : 2.2);
+    const tgt = touchIn.steerOn ? touchIn.steer : (keys.left ? 1 : 0) - (keys.right ? 1 : 0);
+    const rate = touchIn.steerOn ? 6 : tgt === 0 ? 3.5 : (Math.sign(tgt) !== Math.sign(steerIn) && steerIn !== 0 ? 4 : 2.2);
     steerIn += Math.max(-rate * dt, Math.min(rate * dt, tgt - steerIn));
     const lock = STEER_MAX * Math.min(1, 11 / Math.max(st.u, 11));
     st.delta = steerIn * lock;
-    st.thr += Math.max(-5 * dt, Math.min(5 * dt, (keys.gas ? 1 : 0) - st.thr));
-    st.brk += Math.max(-5 * dt, Math.min(5 * dt, (keys.brake ? 1 : 0) - st.brk));
+    const gasT = touchIn.pedalOn ? Math.max(0, touchIn.pedal) : keys.gas ? 1 : 0;
+    const brkT = touchIn.pedalOn ? Math.max(0, -touchIn.pedal) : keys.brake ? 1 : 0;
+    st.thr += Math.max(-5 * dt, Math.min(5 * dt, gasT - st.thr));
+    st.brk += Math.max(-5 * dt, Math.min(5 * dt, brkT - st.brk));
     if (abs) slipLimit(dt);
   }
 }
@@ -2863,11 +2909,35 @@ window.addEventListener('keydown', e => {
 });
 window.addEventListener('keyup', e => { const k = KEYMAP[e.code]; if (k) keys[k] = false; });
 window.addEventListener('blur', () => { Object.keys(keys).forEach(k => keys[k] = false); });
-document.querySelectorAll('#touch button').forEach(b => {
-  const k = b.dataset.k;
-  b.addEventListener('pointerdown', e => { e.preventDefault(); if (driver !== 'manual') setDriver('manual'); keys[k] = true; b.setPointerCapture(e.pointerId); });
-  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => b.addEventListener(ev, () => { keys[k] = false; }));
-});
+// thumb pads: the value is how far the thumb has moved from where it first touched (like a virtual joystick),
+// so the thumb can land anywhere on the pad; letting go centres the steering and lifts off both pedals
+function thumbPad(el, axis, apply) {
+  const knob = el.querySelector('.knob'), range = axis === 'x' ? 62 : 58;
+  let id = null, x0 = 0, y0 = 0;
+  const set = (v, on) => {
+    apply(v, on);
+    knob.style.transform = axis === 'x' ? `translateX(${v * range}px)` : `translateY(${-v * range}px)`;
+    el.classList.toggle('active', on); el.classList.toggle('brk', on && v < 0);
+    el.setAttribute('aria-valuenow', Math.round(v * 100));
+  };
+  const read = e => {
+    const d = axis === 'x' ? e.clientX - x0 : y0 - e.clientY;
+    let v = Math.max(-1, Math.min(1, d / range));
+    if (Math.abs(v) < 0.06) v = 0;                       // small dead zone around the touch point
+    set(v, true);
+  };
+  el.addEventListener('pointerdown', e => {
+    e.preventDefault(); if (id != null) return;
+    id = e.pointerId; x0 = e.clientX; y0 = e.clientY;
+    try { el.setPointerCapture(id); } catch (err) {}   // keeps the thumb on the pad even if it slides off
+    if (driver !== 'manual') setDriver('manual');
+    read(e);
+  });
+  el.addEventListener('pointermove', e => { if (e.pointerId === id) read(e); });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => el.addEventListener(ev, e => { if (e.pointerId !== id) return; id = null; set(0, false); }));
+}
+thumbPad($('padSteer'), 'x', (v, on) => { touchIn.steer = -v; touchIn.steerOn = on; });   // drag right = steer right
+thumbPad($('padPedal'), 'y', (v, on) => { touchIn.pedal = v; touchIn.pedalOn = on; });
 function setMode(m) {
   mode = m;
   document.querySelectorAll('#modes button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
