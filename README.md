@@ -15,7 +15,7 @@ Everything is in one file, `index.html`. Open it in a browser, or publish the re
 **On track**
 - Two circuits: a flowing club circuit, and a handling track built to test balance (sweeper, esses, hairpin, crest, bumpy braking zone, off-camber corner).
 - Hills, rough patches, raised kerbs, grass, skid marks.
-- Drive yourself (keyboard or touch, with optional ABS and traction help) or let the autopilot drive:
+- Drive yourself (keyboard, or one thumb on touch screens: sideways to steer, up for throttle, down to brake; with optional ABS and traction help) or let the autopilot drive:
   - **Follows line**: follows the racing line and its speed plan blindly; setup flaws show plainly.
   - **Catches slides**: also countersteers on oversteer and lifts on understeer.
   - **Learns track**: finds the car's limit lap by lap, separately for cornering and braking, until the lap times settle.
@@ -37,7 +37,7 @@ Open `index.html` in a current desktop or mobile browser. It loads three.js from
 
 To host it: in the repository settings, enable **Pages** with the `main` branch as the source. The simulator is then served at `https://<user>.github.io/setup-unleashed/`.
 
-Driving yourself: arrow keys or W A S D; on touch screens, the buttons on the 3D view. Rest the pointer on any control for a short description.
+Driving yourself: arrow keys or W A S D; on touch screens, one thumb on the pad at the bottom right of the 3D view (sideways to steer, up for throttle, down to brake). Rest the pointer on any control for a short description.
 
 ## Notes on the model
 

@@ -98,15 +98,14 @@ button.chip[aria-pressed="true"] { background: var(--sel-bg); color: var(--sel-f
 .dial .big b { font-size: 20px; }
 #map { position: absolute; right: 12px; bottom: 10px; width: 150px; height: 150px; border-radius: 4px; background: color-mix(in srgb, var(--panel) 80%, transparent); border: 1px solid var(--line); pointer-events: none; }
 /* thumb controls (touch screens): drag the left pad sideways to steer, the right pad up for throttle and down to brake */
-.touch { position: absolute; inset: auto 0 0 0; display: none; justify-content: space-between; align-items: flex-end; padding: 0 max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); pointer-events: none; }
+.touch { position: absolute; inset: auto 0 0 0; display: none; justify-content: flex-end; align-items: flex-end; padding: 0 max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); pointer-events: none; }
 .pad { position: relative; pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; border: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 62%, transparent); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
-.pad.steer { width: 190px; height: 76px; border-radius: 38px; }
-.pad.pedal { width: 76px; height: 176px; border-radius: 38px; background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 16%, transparent), transparent 45%, transparent 55%, color-mix(in srgb, var(--coral) 18%, transparent)), color-mix(in srgb, var(--panel) 62%, transparent); }
+.pad.joy { width: 184px; height: 184px; border-radius: 50%; background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 16%, transparent), transparent 42%, transparent 58%, color-mix(in srgb, var(--coral) 18%, transparent)), color-mix(in srgb, var(--panel) 62%, transparent); }
 .pad .knob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; border: 2px solid var(--ink); background: color-mix(in srgb, var(--panel) 70%, transparent); transition: transform .12s ease-out; }
 .pad.active .knob { transition: none; border-color: var(--accent); }
-.pad.pedal.active.brk .knob { border-color: var(--coral); }
+.pad.active.brk .knob { border-color: var(--coral); }
 .pad .lbl { position: absolute; font-family: var(--f-display); font-weight: 600; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
-.pad .lbl.l { left: 14px; top: 50%; transform: translateY(-50%); } .pad .lbl.r { right: 14px; top: 50%; transform: translateY(-50%); }
+.pad .lbl.l, .pad .lbl.r { top: 50%; transform: translateY(-52%); font-size: 26px; font-weight: 500; line-height: 1; } .pad .lbl.l { left: 14px; } .pad .lbl.r { right: 14px; }
 .pad .lbl.up { top: 12px; left: 50%; transform: translateX(-50%); color: var(--accent); } .pad .lbl.dn { bottom: 12px; left: 50%; transform: translateX(-50%); color: var(--coral); }
 @media (pointer: coarse) { .touch.show { display: flex; } }
 /* touch screens of any size: keep the bottom corners free for the thumbs */
@@ -254,7 +253,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
   .scope { display: none; }
   .view { height: auto; min-height: 0; }
   .console { overflow-y: auto; }
-  .pad.steer { width: 170px; height: 68px; } .pad.pedal { width: 68px; height: 150px; }
+  .pad.joy { width: 156px; height: 156px; }
 }
 @media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
 </style>
@@ -302,11 +301,8 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
       </div>
       <canvas id="map" aria-label="Track map with the car's position"></canvas>
       <div class="touch" id="touch">
-        <div class="pad steer" id="padSteer" role="slider" aria-label="Steering: drag left or right" aria-valuemin="-100" aria-valuemax="100" aria-valuenow="0">
-          <span class="lbl l">Left</span><span class="lbl r">Right</span><i class="knob"></i>
-        </div>
-        <div class="pad pedal" id="padPedal" role="slider" aria-label="Pedals: drag up for throttle, down to brake" aria-valuemin="-100" aria-valuemax="100" aria-valuenow="0">
-          <span class="lbl up">Gas</span><span class="lbl dn">Brake</span><i class="knob"></i>
+        <div class="pad joy" id="padJoy" role="application" aria-label="Driving with one thumb: drag left or right to steer, up for throttle, down to brake">
+          <span class="lbl up">Gas</span><span class="lbl dn">Brake</span><span class="lbl l">‹</span><span class="lbl r">›</span><i class="knob"></i>
         </div>
       </div>
     </div>
@@ -365,7 +361,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
       </div>
       <label class="check" for="kerbUse"><input type="checkbox" id="kerbUse" checked> Racing line uses the kerbs</label>
       <label class="check" for="absUse"><input type="checkbox" id="absUse" checked> ABS and traction help when you drive</label>
-      <p class="note">Drive with <kbd>←</kbd><kbd>→</kbd> or <kbd>A</kbd><kbd>D</kbd> to steer, <kbd>↑</kbd>/<kbd>W</kbd> for throttle, <kbd>↓</kbd>/<kbd>S</kbd> to brake. Pressing a key takes over from the autopilot. On touch screens, use the buttons on the view.</p>
+      <p class="note">Drive with <kbd>←</kbd><kbd>→</kbd> or <kbd>A</kbd><kbd>D</kbd> to steer, <kbd>↑</kbd>/<kbd>W</kbd> for throttle, <kbd>↓</kbd>/<kbd>S</kbd> to brake. Pressing a key takes over from the autopilot. On touch screens, drive with one thumb on the pad at the bottom right: sideways to steer, up for throttle, down to brake.</p>
       <div class="row3">
         <button id="bPause" type="button" aria-pressed="false">Pause</button>
         <button id="bSlow" type="button" aria-pressed="false">Slow-mo</button>
@@ -2909,23 +2905,20 @@ window.addEventListener('keydown', e => {
 });
 window.addEventListener('keyup', e => { const k = KEYMAP[e.code]; if (k) keys[k] = false; });
 window.addEventListener('blur', () => { Object.keys(keys).forEach(k => keys[k] = false); });
-// thumb pads: the value is how far the thumb has moved from where it first touched (like a virtual joystick),
-// so the thumb can land anywhere on the pad; letting go centres the steering and lifts off both pedals
-function thumbPad(el, axis, apply) {
-  const knob = el.querySelector('.knob'), range = axis === 'x' ? 62 : 58;
+// one-thumb joystick: sideways steers, up is throttle, down is brake. Values are how far the thumb has moved from
+// where it first touched (like a game joystick), so it can land anywhere on the pad; letting go centres the
+// steering and lifts off both pedals
+(() => {
+  const el = $('padJoy'), knob = el.querySelector('.knob'), RX = 60, RY = 56, DEAD = 0.07;
   let id = null, x0 = 0, y0 = 0;
-  const set = (v, on) => {
-    apply(v, on);
-    knob.style.transform = axis === 'x' ? `translateX(${v * range}px)` : `translateY(${-v * range}px)`;
-    el.classList.toggle('active', on); el.classList.toggle('brk', on && v < 0);
-    el.setAttribute('aria-valuenow', Math.round(v * 100));
+  const axis = v => { v = Math.max(-1, Math.min(1, v)); return Math.abs(v) < DEAD ? 0 : (v - Math.sign(v) * DEAD) / (1 - DEAD); };
+  const set = (sx, py, on) => {
+    touchIn.steer = -sx; touchIn.steerOn = on;              // thumb right = steer right
+    touchIn.pedal = py; touchIn.pedalOn = on;
+    knob.style.transform = `translate(${sx * RX}px, ${-py * RY}px)`;
+    el.classList.toggle('active', on); el.classList.toggle('brk', on && py < 0);
   };
-  const read = e => {
-    const d = axis === 'x' ? e.clientX - x0 : y0 - e.clientY;
-    let v = Math.max(-1, Math.min(1, d / range));
-    if (Math.abs(v) < 0.06) v = 0;                       // small dead zone around the touch point
-    set(v, true);
-  };
+  const read = e => set(axis((e.clientX - x0) / RX), axis((y0 - e.clientY) / RY), true);
   el.addEventListener('pointerdown', e => {
     e.preventDefault(); if (id != null) return;
     id = e.pointerId; x0 = e.clientX; y0 = e.clientY;
@@ -2934,10 +2927,8 @@ function thumbPad(el, axis, apply) {
     read(e);
   });
   el.addEventListener('pointermove', e => { if (e.pointerId === id) read(e); });
-  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => el.addEventListener(ev, e => { if (e.pointerId !== id) return; id = null; set(0, false); }));
-}
-thumbPad($('padSteer'), 'x', (v, on) => { touchIn.steer = -v; touchIn.steerOn = on; });   // drag right = steer right
-thumbPad($('padPedal'), 'y', (v, on) => { touchIn.pedal = v; touchIn.pedalOn = on; });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => el.addEventListener(ev, e => { if (e.pointerId !== id) return; id = null; set(0, 0, false); }));
+})();
 function setMode(m) {
   mode = m;
   document.querySelectorAll('#modes button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
@@ -3152,7 +3143,7 @@ const TIPS = [
   ['[data-track="club"]', 'Club circuit|1.03 km of flowing corners with hills, rough patches and a ridge across the track.'],
   ['[data-track="handling"]', 'Handling track|1.28 km built to test balance: a long sweeper, esses, a hairpin, a crest, bumpy braking and an off-camber corner.'],
   ['#dAuto', 'Autopilot|The computer drives. Choose how skilled it is below.'],
-  ['#dManual', 'Drive yourself|Arrow keys or W A S D; on touch screens, the buttons on the 3D view. Pressing a key also switches to this.'],
+  ['#dManual', 'Drive yourself|Arrow keys or W A S D; on touch screens, the thumb pad at the bottom right of the 3D view. Pressing a key or touching the pad also switches to this.'],
   ['[data-skill="line"]', 'Follows line|Drives the racing line and its speed plan blindly. Setup flaws show plainly.'],
   ['[data-skill="correct"]', 'Catches slides|Also reacts like a good driver: countersteers on oversteer, unwinds and lifts on understeer.'],
   ['[data-skill="learn"]', 'Learns track|Finds the car’s limit lap by lap, separately for cornering and braking. The one to use for comparing setups.'],
@@ -3191,6 +3182,7 @@ const TIPS = [
   ['#pComfort', 'Comfort|Soft springs, bars and dampers, little camber: smooth over bumps, rolls a lot.'],
   ['#pSport', 'Sport|A balanced road-sport setup; the default.'],
   ['#pTrack', 'Track|Stiff, flat and with more camber, for circuit use.'],
+  ['#padJoy', 'Thumb control|Drag sideways to steer, up for throttle, down to brake. Let go to centre the steering and lift off.'],
   ['#map', 'Track map|Your car (coral dot), the ghost (ring), the racing line and the sector marks.'],
   ['.corner', 'Tire card|Load on the tire, its grip circle (direction of its force and how much grip it uses), camber, slip angle, slip ratio and steering angle.'],
   ['[data-road]', 'Road profile|What the rolling road feeds into the wheels, left and right side separately.'],
