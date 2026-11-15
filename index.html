@@ -272,7 +272,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
         <button class="chip" id="bCam" type="button" aria-pressed="true">Chase cam</button>
         <button class="chip" id="bForces" type="button" aria-pressed="false">Tire forces</button>
         <button class="chip" id="bLine" type="button" aria-pressed="false">Racing line</button>
-        <button class="chip" id="bGhost" type="button" aria-pressed="true">Ghost</button>
+        <button class="chip" id="bGhost" type="button" aria-pressed="false">Ghost</button>
         <button class="chip" id="bFrame" type="button" aria-pressed="false">Chassis</button>
         <button class="chip" id="bShell" type="button" aria-pressed="false" disabled>Body shell</button>
         <button class="chip" id="bWheel" type="button" aria-pressed="false">Steering wheel</button>
@@ -1765,7 +1765,7 @@ const ghost = new THREE.Group(), ghostBody = new THREE.Group(); ghost.add(ghostB
     const we = new THREE.LineSegments(new THREE.EdgesGeometry(wg, 30), ghostLine); we.position.copy(w.position); ghostBody.add(we);
   });
 })();
-let showGhost = true, ghostCache = null;
+let showGhost = false, ghostCache = null;
 // the ghost's time at every track point, for the live delta when the session has no best lap of its own
 function ghostTimes() {
   const g = store.ghosts && store.ghosts[trackId];
@@ -1923,8 +1923,9 @@ const prevCar = new THREE.Vector3();
 function carPos() { return new THREE.Vector3(st.X, st.z, st.Z); }
 const _up = new THREE.Vector3(0, 1, 0);
 let prevPsi = 0;
-// chase camera: distance behind and height above the car (1.5x closer than the original 8 m / 2.6 m)
-const CHASE = { back: 8 / 1.5, up: 2.6 / 1.5 };
+// chase camera: distance behind and height above the car, held at any speed (it used to trail several metres
+// further back at racing speed, so this looks about 1.5x closer than before while driving)
+const CHASE = { back: 4.6, up: 1.5 };
 function snapCamera() {
   const car = carPos();
   if (mode === 'rig') {
@@ -1934,7 +1935,7 @@ function snapCamera() {
     controls.enabled = false;
     const f = new THREE.Vector3(Math.cos(st.psi), 0, -Math.sin(st.psi));
     camera.position.copy(car).addScaledVector(f, -CHASE.back).add(new THREE.Vector3(0, CHASE.up, 0));
-    camera.lookAt(car.x + f.x * 4, car.y + 0.7, car.z + f.z * 4);
+    camera.lookAt(car.x + f.x * 4, car.y + 0.15, car.z + f.z * 4);
   } else {
     controls.enabled = true;
     const off = new THREE.Vector3(-5, 2.8, 4.5).applyAxisAngle(_up, st.psi);   // behind and to the right of the car
@@ -1950,9 +1951,12 @@ function updateCamera(fdt) {
     let dh = Math.atan2(-vZ, vX) - st.psi; dh = Math.atan2(Math.sin(dh), Math.cos(dh));
     const head = st.u > 3 ? st.psi + dh * 0.4 : st.psi;
     const f = new THREE.Vector3(Math.cos(head), 0, -Math.sin(head));
-    const want = car.clone().addScaledVector(f, -CHASE.back).add(new THREE.Vector3(0, CHASE.up, 0));
-    camera.position.lerp(want, 1 - Math.exp(-fdt * 5));
-    camera.lookAt(car.x + f.x * 4, car.y + 0.7, car.z + f.z * 4);
+    // smooth the camera's offset from the car, not its world position: it swings round smoothly in corners
+    // but keeps the set distance at any speed (a world-space lag would add metres at racing speed)
+    const wantOff = f.clone().multiplyScalar(-CHASE.back).add(new THREE.Vector3(0, CHASE.up, 0));
+    const off = camera.position.clone().sub(prevCar).lerp(wantOff, 1 - Math.exp(-fdt * 5));
+    camera.position.copy(car).add(off);
+    camera.lookAt(car.x + f.x * 4, car.y + 0.15, car.z + f.z * 4);
   } else {
     if (mode === 'circuit') {
       // orbit camera rides with the car: keep its offset in the car's frame (follow position and yaw)
