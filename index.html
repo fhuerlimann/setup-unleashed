@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#000000">
 <title>Setup Unleashed</title>
 <meta name="description" content="Suspension and setup simulator: a full car with double wishbones at every corner, two circuits, lap timing, an autopilot that finds the limit, and a setup optimizer.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -10,7 +12,23 @@
 <style>
 /* Layout: one-screen test bench — 3D car + telemetry strip on the left, a setup console on the right; stacks on phones. */
 :root {
-  /* Racing Unleashed brand: Neon Blue highlights (Print Blue on light), Vibrant Coral used sparingly, neutral base */
+  /* Racing Unleashed brand: dark by default (Neon Blue highlights on black); light only when the page is set to light.
+     Vibrant Coral is used sparingly, neutrals form the base */
+  --bg: #000000; --panel: #111114; --ink: #ffffff; --muted: #a3a3a9; --line: #3a3a3f;
+  --accent: #00ffff; --coral: #ff6b6b; --wheel: #00ffff; --load: #c9c9cd; --arb: #ff6b6b; --warn: #ff6b6b; --good: #00ffff; --hi-bg: rgba(0, 255, 255, 0.10);
+  --s1: #00ffff; --s2: #ff6b6b; --s3: #b4b4b9;
+  --c-fl: #00ffff; --c-fr: #00ffff; --c-rl: #ff6b6b; --c-rr: #ff6b6b;
+  --sel-bg: rgba(0, 255, 255, 0.08); --sel-fg: #00ffff; --sel-line: #00ffff;
+  --page: linear-gradient(135deg, #000000 0%, #000000 45%, #3a3a3f 160%);
+  --scene: #0b0b0d; --floor: #17171a; --road: #3a3a3f; --road2: #333338; --shell: #00ffff;
+  --grass: #141615; --asphalt: #2b2b30;
+  color-scheme: dark;
+  --f-display: "Bai Jamjuree", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+:root[data-theme="light"] {
+
   --bg: #ffffff;
   --panel: #f7f7f8;
   --ink: #000000;
@@ -35,33 +53,7 @@
   --grass: #dcdfdc;
   --asphalt: #7c7c82;
   --shell: #00bed7;
-  --f-display: "Bai Jamjuree", "Helvetica Neue", Arial, sans-serif;
-  --f-body: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
-  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #000000; --panel: #111114; --ink: #ffffff; --muted: #a3a3a9; --line: #3a3a3f;
-    --accent: #00ffff; --coral: #ff6b6b; --wheel: #00ffff; --load: #c9c9cd; --arb: #ff6b6b; --warn: #ff6b6b; --good: #00ffff; --hi-bg: rgba(0, 255, 255, 0.10);
-    --s1: #00ffff; --s2: #ff6b6b; --s3: #b4b4b9;
-    --c-fl: #00ffff; --c-fr: #00ffff; --c-rl: #ff6b6b; --c-rr: #ff6b6b;
-    --sel-bg: rgba(0, 255, 255, 0.08); --sel-fg: #00ffff; --sel-line: #00ffff;
-    --page: linear-gradient(135deg, #000000 0%, #000000 45%, #3a3a3f 160%);
-    --scene: #0b0b0d; --floor: #17171a; --road: #3a3a3f; --road2: #333338; --shell: #00ffff;
-    --grass: #141615; --asphalt: #2b2b30;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #000000; --panel: #111114; --ink: #ffffff; --muted: #a3a3a9; --line: #3a3a3f;
-  --accent: #00ffff; --coral: #ff6b6b; --wheel: #00ffff; --load: #c9c9cd; --arb: #ff6b6b; --warn: #ff6b6b; --good: #00ffff; --hi-bg: rgba(0, 255, 255, 0.10);
-  --s1: #00ffff; --s2: #ff6b6b; --s3: #b4b4b9;
-  --c-fl: #00ffff; --c-fr: #00ffff; --c-rl: #ff6b6b; --c-rr: #ff6b6b;
-  --sel-bg: rgba(0, 255, 255, 0.08); --sel-fg: #00ffff; --sel-line: #00ffff;
-  --page: linear-gradient(135deg, #000000 0%, #000000 45%, #3a3a3f 160%);
-  --scene: #0b0b0d; --floor: #17171a; --road: #3a3a3f; --road2: #333338; --shell: #00ffff;
-  --grass: #141615; --asphalt: #2b2b30;
-  color-scheme: dark;
+  color-scheme: light;
 }
 html, body { height: 100%; }
 body {
