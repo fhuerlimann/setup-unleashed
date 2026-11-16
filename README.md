@@ -10,12 +10,12 @@ Everything is in one file, `index.html`. Open it in a browser, or publish the re
 - Ride model with heave, pitch and roll, four unsprung masses, coil springs through a motion ratio, 2-way dampers (bump and rebound), bump stops and an anti-roll bar per axle.
 - Double wishbone kinematics at every corner: camber gain, caster, bump steer and Ackermann steering.
 - Tires with load sensitivity, camber sensitivity, tire pressure (stiffness, response and peak grip), and combined slip: each wheel spins on its own, so wheels can lock under braking and spin under power.
-- Rear-wheel drive, adjustable brake bias.
+- Rear-wheel drive with an adjustable limited-slip differential, adjustable brake bias, per-wheel ABS (on/off) and traction control (off, 1–3).
 
 **On track**
 - Two circuits: a flowing club circuit, and a handling track built to test balance (sweeper, esses, hairpin, crest, bumpy braking zone, off-camber corner).
 - Hills, rough patches, raised kerbs, grass, skid marks.
-- Drive yourself (keyboard, or one thumb on touch screens: sideways to steer, up for throttle, down to brake; with optional ABS and traction help) or let the autopilot drive:
+- Drive yourself (keyboard, or one thumb on touch screens: sideways to steer, up for throttle, down to brake) or let the autopilot drive:
   - **Follows line**: follows the racing line and its speed plan blindly; setup flaws show plainly.
   - **Catches slides**: also countersteers on oversteer and lifts on understeer.
   - **Learns track**: finds the car's limit lap by lap, separately for cornering and braking, until the lap times settle.
@@ -41,7 +41,7 @@ Driving yourself: arrow keys or W A S D; on touch screens, one thumb on the pad 
 
 ## Notes on the model
 
-The physics is a teaching model, not a validated vehicle model. Not modelled: a limited-slip differential, aerodynamics, camber thrust, kingpin inclination, tire temperature. The roll and pitch centres sit at ground level. The autopilot's limit is the limit for this autopilot, not for a perfect driver, and the optimizer finds what this model rewards; treat extreme results as a question, not an answer.
+The physics is a teaching model, not a validated vehicle model. Not modelled: aerodynamics, camber thrust, kingpin inclination, tire temperature. The roll and pitch centres sit at ground level. The autopilot's limit is the limit for this autopilot, not for a perfect driver, and the optimizer finds what this model rewards; treat extreme results as a question, not an answer.
 
 ## Design
 

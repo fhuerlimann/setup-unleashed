@@ -281,6 +281,8 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
         <span class="chip on" id="chipStop" hidden>Bump stop</span>
         <span class="chip on" id="chipLock" hidden>Wheel lock</span>
         <span class="chip on" id="chipSpin" hidden>Wheelspin</span>
+        <span class="chip on" id="chipAbs" hidden>ABS</span>
+        <span class="chip on" id="chipTc" hidden>TC</span>
       </div>
       <div class="dial">
         <div class="big circ"><span>Speed </span><b id="dSpeed">0</b> km/h</div>
@@ -355,7 +357,6 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
         <small id="paceNote">Cornering grip the autopilot plans for. Push it past what the setup can hold and the car runs wide or spins.</small>
       </div>
       <label class="check" for="kerbUse"><input type="checkbox" id="kerbUse" checked> Racing line uses the kerbs</label>
-      <label class="check" for="absUse"><input type="checkbox" id="absUse" checked> ABS and traction help when you drive</label>
       <p class="note">Drive with <kbd>←</kbd><kbd>→</kbd> or <kbd>A</kbd><kbd>D</kbd> to steer, <kbd>↑</kbd>/<kbd>W</kbd> for throttle, <kbd>↓</kbd>/<kbd>S</kbd> to brake. Pressing a key takes over from the autopilot. On touch screens, drive with one thumb on the pad at the bottom right: sideways to steer, up for throttle, down to brake.</p>
       <div class="row3">
         <button id="bPause" type="button" aria-pressed="false">Pause</button>
@@ -409,6 +410,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
         <label class="check"><input type="checkbox" value="damp"> Dampers</label>
         <label class="check"><input type="checkbox" value="steer"> Caster, bump steer</label>
         <label class="check"><input type="checkbox" value="tb"> Tire pressure, brake bias</label>
+        <label class="check"><input type="checkbox" value="diff"> Diff, traction control</label>
       </div>
       <div class="ctl">
         <label for="optGen">Rounds</label><output id="optGenOut">12</output>
@@ -453,7 +455,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
       <div id="paramsRide" class="group"></div>
       <div class="sublabel">Alignment</div>
       <div id="paramsAlign" class="group"></div>
-      <div class="sublabel">Tires &amp; brakes</div>
+      <div class="sublabel">Tires, brakes, electronics &amp; diff</div>
       <div id="paramsTire" class="group"></div>
       <div class="row3">
         <button id="pComfort" type="button">Comfort</button>
@@ -561,7 +563,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
         <dt>Travel (bump / rebound)</dt><dd>70 / 80 mm</dd>
         <dt>Circuit length</dt><dd id="sLen">–</dd>
       </dl>
-      <p class="note">The body heaves, pitches and rolls on four independent corners, each with a coil spring and a 2-way damper acting through the motion ratio squared. An anti-roll bar per axle resists only the difference between left and right travel. On the circuit the car also moves in the plane: each tire makes cornering force from its slip angle, capped by its vertical load, and a tire with more load gains grip less than in proportion, which is why load transfer, and so the springs and bars, changes the balance. Each wheel turns at its own speed: brake and drive torque against the road give a slip ratio, and slip ratio and slip angle share one grip budget, so a locked or spinning wheel has almost no cornering grip left. Grip also depends on camber against the road: a cornering tire grips best leaning slightly into the turn, so body roll, the wishbones' camber gain, static camber and caster all matter. The front uprights turn about the axis through their ball joints, driven by a rack and tie rods; toe and bump steer add to each wheel's steering angle. The circuit has gentle hills, rough patches and raised kerbs; the grass sits 3 cm below the track and grips about half as well. A car that leaves the track is put back on the racing line half a second later, and that lap does not count. Not modelled: a limited-slip differential, aero, camber thrust and kingpin inclination. Roll and pitch centres sit at ground level.</p>
+      <p class="note">The body heaves, pitches and rolls on four independent corners, each with a coil spring and a 2-way damper acting through the motion ratio squared. An anti-roll bar per axle resists only the difference between left and right travel. On the circuit the car also moves in the plane: each tire makes cornering force from its slip angle, capped by its vertical load, and a tire with more load gains grip less than in proportion, which is why load transfer, and so the springs and bars, changes the balance. Each wheel turns at its own speed: brake and drive torque against the road give a slip ratio, and slip ratio and slip angle share one grip budget, so a locked or spinning wheel has almost no cornering grip left. Grip also depends on camber against the road: a cornering tire grips best leaning slightly into the turn, so body roll, the wishbones' camber gain, static camber and caster all matter. The front uprights turn about the axis through their ball joints, driven by a rack and tie rods; toe and bump steer add to each wheel's steering angle. The circuit has gentle hills, rough patches and raised kerbs; the grass sits 3 cm below the track and grips about half as well. A car that leaves the track is put back on the racing line half a second later, and that lap does not count. The car has per-wheel ABS, traction control and a limited-slip rear differential, all adjustable. Not modelled: aero, camber thrust and kingpin inclination. Roll and pitch centres sit at ground level.</p>
     </div>
   </aside>
 </div>
@@ -629,7 +631,7 @@ const STEER_MAX = 0.40;
 // slip angle (rad) where each tire's cornering force peaks: C·atan(B·α) = π/2 (B scales with tire pressure)
 const slipPeak = i => Math.tan(Math.PI / (2 * TIRE.C)) / (TIRE.B * (CORNERS[i].ax === 'R' ? TIRE.rearB : 1) * presB(CORNERS[i].ax));
 const setup = {
-  F: { k: 60000, cb: 3000, cr: 6600, arb: 25000, camber: -2.5, toe: 0.0, caster: 6, bs: 0, p: 2.0, bias: 62 },
+  F: { k: 60000, cb: 3000, cr: 6600, arb: 25000, camber: -2.5, toe: 0.0, caster: 6, bs: 0, p: 2.0, bias: 62, abs: 1, tc: 1, lsd: 30 },
   R: { k: 65000, cb: 3200, cr: 7000, arb: 14000, camber: -1.8, toe: 0.2, p: 2.0 }
 };
 // tire pressure (bar, hot): higher pressure makes the tire stiffer vertically and in cornering (it responds quicker),
@@ -660,7 +662,8 @@ const st = {
   X: 0, Z: 0, psi: 0, u: 0, w: 0, r: 0, delta: 0, thr: 0, brk: 0, ax: 0, ay: 0,
   slip: [0, 0, 0, 0], dw: [0, 0, 0, 0], spin: [0, 0, 0, 0], surf: [1, 1, 1, 1], gam: [0, 0, 0, 0], camF: [1, 1, 1, 1],
   fb: [[0, 0], [0, 0], [0, 0], [0, 0]], use: [[0, 0], [0, 0], [0, 0], [0, 0]], D: [1, 1, 1, 1], tIdx: [0, 0, 0, 0],
-  om: [0, 0, 0, 0], kap: [0, 0, 0, 0]   // wheel spin speed (rad/s) and longitudinal slip ratio
+  om: [0, 0, 0, 0], kap: [0, 0, 0, 0],  // wheel spin speed (rad/s) and longitudinal slip ratio
+  absF: [1, 1, 1, 1], tcF: 1, lsdT: 0     // ABS pressure factor per wheel, traction-control torque factor, differential locking torque
 };
 // wheels: longitudinal slip peaks at KAP_PEAK; beyond it the tire slides (locks under braking, spins under power)
 const KAP_PEAK = 0.10, TAN_PK = Math.tan(Math.PI / (2 * 1.5)), IW = [1.2, 1.2, 1.6, 1.6];
@@ -976,8 +979,19 @@ function wheelSteer(i) {
 function planar(dt) {
   let Fx = 0, Fl = 0, Mz = 0;
   const u = st.u, w = st.w, r = st.r;
-  const driveF = st.thr * Math.min(DRIVE.maxF, DRIVE.power / Math.max(u, 1));
+  // traction control: if a rear wheel spins past the level's target slip, engine torque is cut, then fed back in
+  const tcLvl = Math.round(setup.F.tc ?? 0), tcTarget = [0, 0.22, 0.15, 0.10][tcLvl] || 0;
+  if (tcLvl > 0 && st.thr > 0.02) {
+    st.tcF = Math.max(st.kap[2], st.kap[3]) > tcTarget ? Math.max(0.1, st.tcF - 15 * dt) : Math.min(1, st.tcF + 3 * dt);
+  } else st.tcF = 1;
+  const driveF = st.thr * st.tcF * Math.min(DRIVE.maxF, DRIVE.power / Math.max(u, 1));
   const brakeT = st.brk * DRIVE.brakeG * MASS * G * R;   // total brake torque, split by the brake bias
+  // rear differential: open, it splits the torque equally; a limited-slip diff can move up to 'lsd' % of the input
+  // torque (plus a small preload) to the slower wheel, so the inside wheel can't simply spin away
+  const lsdPct = setup.F.lsd ?? 0, Tin = driveF * R, lsdCap = lsdPct / 100 * Math.abs(Tin) + (lsdPct > 0 ? 40 : 0);
+  st.lsdT = Math.max(-lsdCap, Math.min(lsdCap, 300 * (st.om[3] - st.om[2])));   // right wheel faster: torque to the left
+  const Tdrive = [0, 0, Tin / 2 + st.lsdT / 2, Tin / 2 - st.lsdT / 2];
+  const absOn = (setup.F.abs ?? 1) >= 0.5;
   for (let i = 0; i < 4; i++) {
     const c = CORNERS[i], ax = setup[c.ax], rear = c.ax === 'R';
     const dw = wheelSteer(i); st.dw[i] = dw;
@@ -1005,8 +1019,11 @@ function planar(dt) {
     if (D > 0 && sig > 1e-6) { const F = D * Math.sin(TIRE.C * Math.atan(TAN_PK * sig)); fl = F * sx / sig; fy = -F * sy / sig; }
     st.use[i][0] = D > 0 ? fy / D : 0; st.use[i][1] = D > 0 ? fl / D : 0;
     // wheel spin: drive torque (rear, open differential) minus the road's reaction, then the brake pulls it towards a stop
-    let om = st.om[i] + ((rear ? driveF / 2 * R : 0) - fl * R) / IW[i] * dt;
-    const db = brakeT * (rear ? 1 - brakeFront() : brakeFront()) / 2 / IW[i] * dt;
+    let om = st.om[i] + (Tdrive[i] - fl * R) / IW[i] * dt;
+    // ABS, per wheel: release this wheel's brake quickly when it slips past the target, reapply it more slowly
+    if (absOn && st.brk > 0.02) st.absF[i] = kap < -0.11 ? Math.max(0.05, st.absF[i] - 25 * dt) : Math.min(1, st.absF[i] + 6 * dt);
+    else st.absF[i] = 1;
+    const db = brakeT * (rear ? 1 - brakeFront() : brakeFront()) / 2 * st.absF[i] / IW[i] * dt;
     om = om > 0 ? Math.max(0, om - db) : Math.min(0, om + db);
     st.om[i] = om;
     const bx = fl * cd + fy * sd, bz = -fl * sd + fy * cd;
@@ -1196,8 +1213,7 @@ function pedals() {
   return { thr: clamp01(thr), brk: 0 };
 }
 // threshold braking and throttle control: back the pedal off when a wheel slips past its peak (locks or spins), then
-// let it creep back; the autopilot always drives like this, you get it with 'ABS and traction help'
-let abs = true;
+// let it creep back: the autopilot's own technique (on top of whatever ABS and traction control the car has)
 function slipLimit(dt) {
   const lock = Math.min(...st.kap), spin = Math.max(st.kap[2], st.kap[3]);
   // ease off in proportion to how far past the peak the worst wheel is, and creep back slowly: hovers at the threshold
@@ -1292,7 +1308,6 @@ function drive(dt) {
     const brkT = touchIn.pedalOn ? Math.max(0, -touchIn.pedal) : keys.brake ? 1 : 0;
     st.thr += Math.max(-5 * dt, Math.min(5 * dt, gasT - st.thr));
     st.brk += Math.max(-5 * dt, Math.min(5 * dt, brkT - st.brk));
-    if (abs) slipLimit(dt);
   }
 }
 
@@ -1311,7 +1326,8 @@ function placeCar(idx, speed) {
   st.X = line.x[idx]; st.Z = line.z[idx];
   const n = (idx + 3) % N; st.psi = Math.atan2(-(line.z[n] - line.z[idx]), line.x[n] - line.x[idx]);
   st.u = speed; st.w = st.r = 0; st.delta = 0; steerIn = 0; pedal.braking = false; st.thr = st.brk = 0;
-  for (let i = 0; i < 4; i++) { st.om[i] = speed / R; st.kap[i] = 0; }
+  for (let i = 0; i < 4; i++) { st.om[i] = speed / R; st.kap[i] = 0; st.absF[i] = 1; }
+  st.tcF = 1; st.lsdT = 0;
   pedal.brkCap = pedal.thrCap = 1;
   for (let i = 0; i < 4; i++) { st.tIdx[i] = idx; st.fb[i][0] = st.fb[i][1] = 0; }
   nearIdx = idx; st.jumps = (st.jumps || 0) + 1;
@@ -2142,7 +2158,10 @@ const PARAMS = [
   { key: 'caster', name: 'Caster', unit: '°', min: 0, max: 10, step: 0.5, scale: 1, fmt: v => v.toFixed(1) + '°', only: 'F', tip: 'Backward tilt of the steering axis. More caster adds negative camber to the outside front wheel as you steer.', box: 'paramsAlign' },
   { key: 'bs', name: 'Bump steer', unit: '° toe-in per 25 mm bump', min: -0.5, max: 0.5, step: 0.05, scale: 1, fmt: v => (v > 0 ? '+' : '') + v.toFixed(2) + '°', only: 'F', tip: 'Toe change as the front suspension compresses. Makes the car steer itself over bumps and in roll.', box: 'paramsAlign' },
   { key: 'p', name: 'Tire pressure', unit: 'bar, hot · grip peaks at 2.0', min: 1.4, max: 2.8, step: 0.05, scale: 1, fmt: v => v.toFixed(2), tip: 'Hot tire pressure. Higher: stiffer tire, quicker response, harsher ride. Grip peaks at 2.0 bar and drops either side.', box: 'paramsTire' },
-  { key: 'bias', name: 'Brake bias', unit: '% of braking on the front', min: 50, max: 75, step: 1, scale: 1, fmt: v => v.toFixed(0) + '%', only: 'F', tip: 'Share of the braking done by the front axle. Too far forward: the fronts lock and the car runs straight on. Too far back: the rears lock and the car spins.', box: 'paramsTire' }
+  { key: 'bias', name: 'Brake bias', unit: '% of braking on the front', min: 50, max: 75, step: 1, scale: 1, fmt: v => v.toFixed(0) + '%', only: 'F', tip: 'Share of the braking done by the front axle. Too far forward: the fronts lock and the car runs straight on. Too far back: the rears lock and the car spins.', box: 'paramsTire' },
+  { key: 'abs', name: 'ABS', unit: 'off · on', min: 0, max: 1, step: 1, scale: 1, fmt: v => v >= 0.5 ? 'On' : 'Off', only: 'F', box: 'paramsTire', tip: 'Anti-lock brakes, per wheel: a wheel that starts to lock gets its brake released and reapplied many times a second, so it keeps steering. Off: brake too hard and the wheels lock.' },
+  { key: 'tc', name: 'Traction control', unit: 'off · 1 light … 3 strong', min: 0, max: 3, step: 1, scale: 1, fmt: v => v < 0.5 ? 'Off' : String(Math.round(v)), only: 'F', box: 'paramsTire', tip: 'Cuts engine torque when a rear wheel spins: level 1 allows about 22 % wheelspin, level 3 only 10 %. More intervention is safer but can hold back drive out of slow corners.' },
+  { key: 'lsd', name: 'Limited-slip diff', unit: '% locking, 0 = open', min: 0, max: 100, step: 5, scale: 1, fmt: v => v.toFixed(0) + '%', only: 'F', box: 'paramsTire', tip: 'How much of the drive torque the differential can shift to the slower rear wheel. Open (0 %): the unloaded inside wheel spins away on corner exit. More locking: better traction, but more understeer on turn-in and power oversteer on exit.' }
 ];
 PARAMS.forEach(p => {
   const d = document.createElement('div'); d.className = 'param'; if (p.tip) d.dataset.tip = p.name + '|' + p.tip;
@@ -2265,7 +2284,6 @@ $('bCam').onclick = e => {
   snapCamera();
 };
 $('pace').addEventListener('input', e => { pace = +e.target.value; $('paceOut').textContent = pace.toFixed(2) + ' g'; speedProfile(); });
-$('absUse').addEventListener('change', e => { abs = e.target.checked; });
 $('kerbUse').addEventListener('change', e => { useKerbs = e.target.checked; buildLine(); buildLineMesh(); drawMap(); });
 function setDriver(d) {
   driver = d;
@@ -2307,10 +2325,10 @@ const store = (() => {
 const saveStore = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) {} };
 const setupKey = o => JSON.stringify(o, (k, v) => typeof v === 'number' ? +v.toFixed(4) : v);
 const setupSlot = () => ['A', 'B'].find(n => store.setups[n] && setupKey(store.setups[n]) === setupKey(setup)) || '';
-const setupSummary = o => `Springs ${o.F.k / 1000}/${o.R.k / 1000} kN/m · bars ${o.F.arb / 1000}/${o.R.arb / 1000} · camber ${o.F.camber}/${o.R.camber}° · toe ${o.F.toe}/${o.R.toe}° · bump ${o.F.cb}/${o.R.cb} · rebound ${o.F.cr}/${o.R.cr} · tires ${o.F.p ?? 2}/${o.R.p ?? 2} bar · brake bias ${o.F.bias ?? 62}%`;
+const setupSummary = o => `Springs ${o.F.k / 1000}/${o.R.k / 1000} kN/m · bars ${o.F.arb / 1000}/${o.R.arb / 1000} · camber ${o.F.camber}/${o.R.camber}° · toe ${o.F.toe}/${o.R.toe}° · bump ${o.F.cb}/${o.R.cb} · rebound ${o.F.cr}/${o.R.cr} · tires ${o.F.p ?? 2}/${o.R.p ?? 2} bar · brake bias ${o.F.bias ?? 62}% · ABS ${(o.F.abs ?? 1) ? 'on' : 'off'} · TC ${o.F.tc ?? 1} · diff ${o.F.lsd ?? 30}%`;
 const DRIVER_TAG = { line: 'Line', correct: 'Slides', learn: 'Learn' };
 // autopilot version (older autopilot laps are marked †, they are not comparable)
-const DRIVER_VER = 4;   // 2 = planned braking and throttle; 3 = braking learned to the limit, power-limited acceleration; 4 = wheel lock-up and spin
+const DRIVER_VER = 5;   // 2 = planned braking and throttle; 3 = braking learned to the limit, power-limited acceleration; 4 = wheel lock-up and spin; 5 = ABS, traction control and a limited-slip diff
 const oldAuto = l => l.drv !== 'You' && (l.ver || 1) < DRIVER_VER;
 const fmtS = t => t == null ? '–' : t.toFixed(2);
 let bestShown = null, seenLapStart = null;
@@ -2655,7 +2673,7 @@ function makeCMA(m0, sigma0) {
   };
   return S;
 }
-const OPT_GROUPS = { k: [['k']], arb: [['arb']], camber: [['camber']], toe: [['toe']], damp: [['cb'], ['cr']], steer: [['caster', 'F'], ['bs', 'F']], tb: [['p'], ['bias', 'F']] };
+const OPT_GROUPS = { k: [['k']], arb: [['arb']], camber: [['camber']], toe: [['toe']], damp: [['cb'], ['cr']], steer: [['caster', 'F'], ['bs', 'F']], tb: [['p'], ['bias', 'F']], diff: [['lsd', 'F'], ['tc', 'F']] };
 const POOL = () => workerOK ? Math.max(1, Math.min(6, (navigator.hardwareConcurrency || 4) - 1)) : 1;
 let opt = null;
 function optDims() {
@@ -3017,7 +3035,7 @@ new ResizeObserver(resize).observe(host);
 new ResizeObserver(drawChart).observe(chart);
 const fmtT = t => t == null ? '–' : (Math.floor(t / 60) + ':' + (t % 60).toFixed(2).padStart(5, '0'));
 const DT = 1 / 3000;
-let last = performance.now(), uiTick = 0, balance = 0, simSpeed = 1, lockHold = 0, spinHold = 0;
+let last = performance.now(), uiTick = 0, balance = 0, simSpeed = 1, lockHold = 0, spinHold = 0, absHold = 0, tcHold = 0;
 // adaptive resolution: average frame interval over ~1 s; below ~45 fps render at a lower pixel ratio, above ~57 fps step back up
 const RES = { acc: 0, n: 0, cool: 0 };
 function adaptRes(dtMs) {
@@ -3112,6 +3130,8 @@ function frame(now) {
     $('chipStop').hidden = !st.stop;
     lockHold = Math.min(...st.kap) < -0.3 ? 8 : Math.max(0, lockHold - 1); spinHold = Math.max(st.kap[2], st.kap[3]) > 0.3 ? 8 : Math.max(0, spinHold - 1);
     $('chipLock').hidden = !(mode === 'circuit' && lockHold > 0); $('chipSpin').hidden = !(mode === 'circuit' && spinHold > 0);
+    absHold = Math.min(...st.absF) < 0.9 ? 8 : Math.max(0, absHold - 1); tcHold = st.tcF < 0.9 ? 8 : Math.max(0, tcHold - 1);
+    $('chipAbs').hidden = !(mode === 'circuit' && absHold > 0); $('chipTc').hidden = !(mode === 'circuit' && tcHold > 0);
     if (maneuver) {
       $('lat').value = latCmd; $('latOut').textContent = latLabel(latCmd);
       $('lon').value = lonCmd; $('lonOut').textContent = lonLabel(lonCmd);
@@ -3149,7 +3169,6 @@ const TIPS = [
   ['#speeds button', 'Sim speed|Runs the simulation faster than real time. Driving and physics stay the same; the view is simply drawn less often.'],
   ['label[for="pace"]', 'Autopilot pace|The cornering grip, in g, the autopilot plans for. Too high and the car runs wide or spins. Not used by Learns track.'],
   ['label[for="kerbUse"]', 'Racing line uses the kerbs|Lets the line run over the inside kerbs, which are a little bumpy and grip slightly less.'],
-  ['label[for="absUse"]', 'ABS and traction help|When you drive: eases the brake when a wheel locks and the throttle when the rear wheels spin. The autopilot always drives this way.'],
   ['#bPause, #bPause2', 'Pause|Freezes the simulation.'],
   ['#bSlow, #bSlow2', 'Slow-mo|Runs at one fifth of real time.'],
   ['#bReset', 'Restart|Puts the car back before the start line and clears the lap timer and what the autopilot has learned.'],
