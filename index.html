@@ -110,8 +110,8 @@ button.chip[aria-pressed="true"] { background: var(--sel-bg); color: var(--sel-f
 @media (pointer: coarse) { .touch.show { display: flex; } }
 /* touch screens of any size: keep the bottom corners free for the thumbs */
 @media (pointer: coarse) {
-  .view:has(.touch.show) .dial { top: 74px; bottom: auto; }
-  .view:has(.touch.show) #map { top: 74px; bottom: auto; }
+  .view:has(.touch.show) .dial { top: var(--hud2, 74px); bottom: auto; }
+  .view:has(.touch.show) #map { top: var(--hud2, 74px); bottom: auto; }
   .view:has(.touch.show) .status { left: 10px; right: 10px; top: 46%; bottom: auto; max-width: none; justify-content: center; }
 }
 .scope { border: 1px solid var(--line); border-radius: 3px; background: var(--panel); position: relative; min-height: 0; }
@@ -120,10 +120,11 @@ button.chip[aria-pressed="true"] { background: var(--sel-bg); color: var(--sel-f
 .console { background: var(--panel); border: 1px solid var(--line); border-radius: 3px; padding: 16px; display: flex; flex-direction: column; gap: 22px; overflow-y: auto; min-height: 0; }
 .group { display: flex; flex-direction: column; gap: 10px; }
 .group.tab-off { display: none !important; }
-.tabs { position: sticky; top: -16px; z-index: 3; display: flex; gap: 4px; margin: -6px -16px 0; padding: 8px 16px 0; background: var(--panel); border-bottom: 1px solid var(--line); }
-.tabs button { flex: 1; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: none; color: var(--muted); padding: 10px 4px 9px; }
-.tabs button:hover { color: var(--ink); border-color: transparent; border-bottom-color: var(--line); }
-.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+/* the four section tabs: a segmented bar that reads as navigation (distinct from the Mode buttons above it) */
+.tabs { position: sticky; top: -16px; z-index: 3; display: flex; gap: 3px; margin: -6px -16px 0; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+.tabs button { flex: 1; border: 1px solid var(--line); border-radius: 3px; background: var(--bg); color: var(--ink); padding: 11px 4px; font-size: 13px; }
+.tabs button:hover { border-color: var(--accent); }
+.tabs button[aria-selected="true"] { background: var(--accent); color: #000; border-color: var(--accent); }
 .tabs button[hidden] { display: none; }
 .label { font-family: var(--f-display); font-weight: 700; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
 .sublabel { font-weight: 600; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 8px; }
@@ -227,22 +228,24 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
   .stage { grid-template-rows: auto 190px; }
   .view { height: 62vh; min-height: 360px; }
   .console { overflow: visible; }
-  .view { height: min(76svh, 640px); min-height: 440px; }
+  /* the driving view runs edge to edge and fills most of the screen */
+  .view { height: min(82svh, 720px); min-height: 460px; margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); border-radius: 0; border-left: 0; border-right: 0; }
 }
 /* compact HUD for phones (portrait, and landscape where the height is small) */
 @media (max-width: 860px), (pointer: coarse) and (max-height: 520px) {
-  .hud { left: 10px; top: 8px; max-width: 60%; }
+  .view { --hud2: 46px; }
+  .hud { display: none; }   /* the page name is in the browser tab; the screen goes to the car */
   .hud h1 { font-size: 15px; }
   .hud h1::after { width: 32px; height: 3px; margin-top: 3px; }
   .hud p { display: none; }
-  .chips { left: 10px; right: 10px; top: 36px; max-width: none; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+  .chips { left: 10px; right: 10px; top: 8px; max-width: none; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
   .chips::-webkit-scrollbar { display: none; }
   .chips .chip { flex: none; font-size: 10px; padding: 4px 7px; }
   .status { left: 10px; right: 10px; top: 46%; bottom: auto; max-width: none; justify-content: center; }
-  .dial { top: 66px; bottom: auto; left: 10px; max-width: calc(100% - 118px); gap: 2px 12px; font-size: 11px; padding: 5px 8px; }
+  .dial { top: var(--hud2); bottom: auto; left: 10px; max-width: calc(100% - 118px); gap: 2px 12px; font-size: 11px; padding: 5px 8px; }
   .dial .big b { font-size: 17px; }
   .dial .lo { display: none; }
-  #map { top: 66px; bottom: auto; right: 10px; width: 92px; height: 92px; }
+  #map { top: var(--hud2); bottom: auto; right: 6px; width: 96px; height: 96px; background: transparent; border: 0; }
 }
 /* phone in landscape: the 3D view fills the height, the console sits beside it, the telemetry strip is dropped */
 @media (pointer: coarse) and (max-height: 520px) {
@@ -293,7 +296,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
         <div class="circ lo"><span>Steer </span><b id="dSteer">0.0</b>°</div>
         <div class="circ"><span>Lap </span><b id="dLap">–</b></div>
         <div class="circ lo"><span>Last </span><b id="dLast">–</b></div>
-        <div class="circ"><span>Best </span><b id="dBest">–</b></div>
+        <div class="circ lo"><span>Best </span><b id="dBest">–</b></div>
         <div class="circ"><span>Δ best </span><b id="dDelta">–</b></div>
         <div class="lo"><span>Roll </span><b id="dRoll">0.00</b>°</div>
         <div class="lo"><span>Pitch (+ nose up) </span><b id="dPitch">0.00</b>°</div>
