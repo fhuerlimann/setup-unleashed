@@ -131,6 +131,7 @@ button.chip[aria-pressed="true"] { background: var(--sel-bg); color: var(--sel-f
 .phead b { font-weight: 600; }
 .phead small { color: var(--muted); font-size: 11px; text-align: right; }
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pair.car .cell { grid-column: 1 / -1; }   /* car-wide settings: one slider across both columns */
 .cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .cell output { font-family: var(--f-mono); font-size: 12px; font-variant-numeric: tabular-nums; }
 .cell input { width: 100%; accent-color: var(--accent); margin: 0; }
@@ -268,7 +269,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
         <button class="chip" id="bForces" type="button" aria-pressed="false">Tire forces</button>
         <button class="chip" id="bLine" type="button" aria-pressed="false">Racing line</button>
         <button class="chip" id="bGhost" type="button" aria-pressed="false">Ghost</button>
-        <button class="chip" id="bWheel" type="button" aria-pressed="false">Steering wheel</button>
+        <button class="chip" id="bWheel" type="button" aria-pressed="true">Steering wheel</button>
       </div>
       <div class="status" id="status" aria-live="polite">
         <span class="chip on" id="chipOff" hidden>Off track</span>
@@ -1605,7 +1606,7 @@ box(frameG, 0.5, 0.42, 0.5, mat.dark, -B + 0.75, 0.08, 0);
 box(frameG, 0.36, 0.08, 0.36, mat.dark, 0.25, -0.08, -0.12);
 box(frameG, 0.08, 0.42, 0.36, mat.dark, 0.07, 0.15, -0.12);
 const wheelPivot = new THREE.Group(); wheelPivot.position.set(0.62, 0.24, -0.12); wheelPivot.rotation.z = -0.35; chassis.add(wheelPivot);
-wheelPivot.visible = false;   // its own toggle, so it can show with or without the chassis
+wheelPivot.visible = true;   // shown by default; its own toggle
 const steeringWheel = new THREE.Group(); wheelPivot.add(steeringWheel);
 // three-spoke sport steering wheel (the wheel faces the driver at -x; the column runs forward along +x)
 (() => {
@@ -2153,17 +2154,19 @@ const PARAMS = [
   { key: 'caster', name: 'Caster', unit: '°', min: 0, max: 10, step: 0.5, scale: 1, fmt: v => v.toFixed(1) + '°', only: 'F', tip: 'Backward tilt of the steering axis. More caster adds negative camber to the outside front wheel as you steer.', box: 'paramsAlign' },
   { key: 'bs', name: 'Bump steer', unit: '° toe-in per 25 mm bump', min: -0.5, max: 0.5, step: 0.05, scale: 1, fmt: v => (v > 0 ? '+' : '') + v.toFixed(2) + '°', only: 'F', tip: 'Toe change as the front suspension compresses. Makes the car steer itself over bumps and in roll.', box: 'paramsAlign' },
   { key: 'p', name: 'Tire pressure', unit: 'bar, hot · grip peaks at 2.0', min: 1.4, max: 2.8, step: 0.05, scale: 1, fmt: v => v.toFixed(2), tip: 'Hot tire pressure. Higher: stiffer tire, quicker response, harsher ride. Grip peaks at 2.0 bar and drops either side.', box: 'paramsTire' },
-  { key: 'bias', name: 'Brake bias', unit: '% of braking on the front', min: 50, max: 75, step: 1, scale: 1, fmt: v => v.toFixed(0) + '%', only: 'F', tip: 'Share of the braking done by the front axle. Too far forward: the fronts lock and the car runs straight on. Too far back: the rears lock and the car spins.', box: 'paramsTire' },
-  { key: 'abs', name: 'ABS', unit: 'off · on', min: 0, max: 1, step: 1, scale: 1, fmt: v => v >= 0.5 ? 'On' : 'Off', only: 'F', box: 'paramsTire', tip: 'Anti-lock brakes, per wheel: a wheel that starts to lock gets its brake released and reapplied many times a second, so it keeps steering. Off: brake too hard and the wheels lock.' },
-  { key: 'tc', name: 'Traction control', unit: 'off · 1 light … 3 strong', min: 0, max: 3, step: 1, scale: 1, fmt: v => v < 0.5 ? 'Off' : String(Math.round(v)), only: 'F', box: 'paramsTire', tip: 'Cuts engine torque when a rear wheel spins: level 1 allows about 22 % wheelspin, level 3 only 10 %. More intervention is safer but can hold back drive out of slow corners.' },
-  { key: 'lsd', name: 'Limited-slip diff', unit: '% locking, 0 = open', min: 0, max: 100, step: 5, scale: 1, fmt: v => v.toFixed(0) + '%', only: 'F', box: 'paramsTire', tip: 'How much of the drive torque the differential can shift to the slower rear wheel. Open (0 %): the unloaded inside wheel spins away on corner exit. More locking: better traction, but more understeer on turn-in and power oversteer on exit.' }
+  { key: 'bias', name: 'Brake bias', unit: '% of braking on the front', min: 50, max: 75, step: 1, scale: 1, fmt: v => v.toFixed(0) + '%', only: 'F', car: true, tip: 'Share of the braking done by the front axle. Too far forward: the fronts lock and the car runs straight on. Too far back: the rears lock and the car spins.', box: 'paramsTire' },
+  { key: 'abs', name: 'ABS', unit: 'off · on', min: 0, max: 1, step: 1, scale: 1, fmt: v => v >= 0.5 ? 'On' : 'Off', only: 'F', car: true, box: 'paramsTire', tip: 'Anti-lock brakes, per wheel: a wheel that starts to lock gets its brake released and reapplied many times a second, so it keeps steering. Off: brake too hard and the wheels lock.' },
+  { key: 'tc', name: 'Traction control', unit: 'off · 1 light … 3 strong', min: 0, max: 3, step: 1, scale: 1, fmt: v => v < 0.5 ? 'Off' : String(Math.round(v)), only: 'F', car: true, box: 'paramsTire', tip: 'Cuts engine torque when a rear wheel spins: level 1 allows about 22 % wheelspin, level 3 only 10 %. More intervention is safer but can hold back drive out of slow corners.' },
+  { key: 'lsd', name: 'Limited-slip diff (rear)', unit: '% locking, 0 = open', min: 0, max: 100, step: 5, scale: 1, fmt: v => v.toFixed(0) + '%', only: 'F', car: true, box: 'paramsTire', tip: 'How much of the drive torque the differential can shift to the slower rear wheel. Open (0 %): the unloaded inside wheel spins away on corner exit. More locking: better traction, but more understeer on turn-in and power oversteer on exit.' }
 ];
+// 'front' / 'rear' for per-axle settings; nothing for car-wide ones (brake bias, ABS, traction control, diff)
+const axName = (p, ax) => p.car ? '' : ax === 'F' ? 'front' : 'rear';
 PARAMS.forEach(p => {
   const d = document.createElement('div'); d.className = 'param'; if (p.tip) d.dataset.tip = p.name + '|' + p.tip;
-  d.innerHTML = `<div class="phead"><b>${p.name}</b><small>${p.unit}</small></div><div class="pair">` +
-    ['F', 'R'].map(ax => (p.only && p.only !== ax) ? `<span class="cell na">front only</span>` :
+  d.innerHTML = `<div class="phead"><b>${p.name}</b><small>${p.unit}</small></div><div class="pair${p.car ? ' car' : ''}">` +
+    ['F', 'R'].map(ax => (p.only && p.only !== ax) ? (p.car ? '' : `<span class="cell na">front only</span>`) :
       `<label class="cell ${p.cls || ''}" for="${p.key}${ax}"><output id="${p.key}${ax}o"></output>` +
-      `<input id="${p.key}${ax}" type="range" min="${p.min}" max="${p.max}" step="${p.step}" aria-label="${p.name}, ${ax === 'F' ? 'front' : 'rear'}"></label>`).join('') + '</div>';
+      `<input id="${p.key}${ax}" type="range" min="${p.min}" max="${p.max}" step="${p.step}" aria-label="${p.name}${axName(p, ax) ? ', ' + axName(p, ax) : ''}"></label>`).join('') + '</div>';
   $(p.box).appendChild(d);
   ['F', 'R'].forEach(ax => {
     if (p.only && p.only !== ax) return;
@@ -2727,7 +2730,7 @@ function showOptResult() {
     `start <b>${fmtT(opt.start)}</b> · best <b>${fmtT(opt.best.f)}</b> (${d <= 0 ? '−' : '+'}${Math.abs(d).toFixed(2)} s) · ${((performance.now() - opt.t0) / 1000).toFixed(0)} s`;
   const rows = opt.dims.map(dm => {
     const a = opt.base[dm.ax][dm.p.key] / dm.p.scale, b = opt.best.setup[dm.ax][dm.p.key] / dm.p.scale;
-    return `<tr><td>${dm.p.name} ${dm.ax === 'F' ? 'front' : 'rear'}</td><td>${dm.p.fmt(a)}</td><td class="${Math.abs(b - a) > 1e-9 ? 'pb' : ''}">${dm.p.fmt(b)}</td></tr>`;
+    return `<tr><td>${dm.p.name} ${axName(dm.p, dm.ax)}</td><td>${dm.p.fmt(a)}</td><td class="${Math.abs(b - a) > 1e-9 ? 'pb' : ''}">${dm.p.fmt(b)}</td></tr>`;
   }).join('');
   $('optTable').innerHTML = `<thead><tr><th>Setting</th><th>Start</th><th>Best</th></tr></thead><tbody>${rows}</tbody>`;
   $('optTable').hidden = false; $('optApply').disabled = false;
@@ -2774,7 +2777,7 @@ $('optStop').onclick = () => { if (!opt) return; opt.running = false; opt.stoppe
 const SCAN = { pts: [], running: false, stops: new Set(), dim: null, base: null, hover: null, geo: null };
 (() => {
   const sel = $('scanParam');
-  eachParam((p, ax) => { const o = document.createElement('option'); o.value = p.key + ax; o.textContent = `${p.name} · ${ax === 'F' ? 'front' : 'rear'}`; sel.appendChild(o); });
+  eachParam((p, ax) => { const o = document.createElement('option'); o.value = p.key + ax; o.textContent = axName(p, ax) ? `${p.name} · ${axName(p, ax)}` : p.name; sel.appendChild(o); });
   sel.value = 'arbR';
 })();
 function scanEstimate() { $('scanEst').textContent = `${$('scanN').value} fast runs of up to ${$('batchN').value} laps, ${POOL()} at a time.`; }
@@ -2820,7 +2823,7 @@ function drawScan() {
   for (let y = y0; y <= y1 + 1e-9; y += stepY) { const yy = Math.round(Y(y)) + 0.5; g.globalAlpha = 0.5; g.beginPath(); g.moveTo(pl, yy); g.lineTo(W - pr, yy); g.stroke(); g.globalAlpha = 1; g.fillText(fmtT(y).replace(/^0:/, ''), pl - 4, yy); }
   g.textAlign = 'center'; g.textBaseline = 'alphabetic';
   for (let k = 0; k <= 4; k++) { const v = xmin + (xmax - xmin) * k / 4; g.fillText(d.p.fmt(v), X(v), H - 16); }
-  g.fillText(`${d.p.name} ${d.ax === 'F' ? 'front' : 'rear'} (${d.p.unit})`, pl + iw / 2, H - 3);
+  g.fillText(`${d.p.name} ${axName(d.p, d.ax)} (${d.p.unit})`.replace('  ', ' '), pl + iw / 2, H - 3);
   // current value
   const cur = SCAN.base[d.ax][d.p.key] / d.p.scale;
   g.strokeStyle = muted; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(Math.round(X(cur)) + 0.5, pt); g.lineTo(Math.round(X(cur)) + 0.5, H - pb); g.stroke(); g.setLineDash([]);
@@ -2844,7 +2847,7 @@ function drawScan() {
     g.strokeStyle = muted; g.lineWidth = 1; g.beginPath(); g.moveTo(Math.round(x) + 0.5, pt); g.lineTo(Math.round(x) + 0.5, H - pb); g.stroke();
     g.fillStyle = surf; g.beginPath(); g.arc(x, y, 7, 0, 7); g.fill(); g.fillStyle = col; g.beginPath(); g.arc(x, y, 5, 0, 7); g.fill();
     const tip = $('scanTip'), b = best.r.f;
-    tip.innerHTML = `${d.p.name} ${d.ax === 'F' ? 'front' : 'rear'} <b>${d.p.fmt(vx(q))}</b><br>Lap ${fmtT(q.r.f)} <span>${q.r.f - b < 0.005 ? 'best' : '+' + (q.r.f - b).toFixed(2) + ' s'}</span><br>` +
+    tip.innerHTML = `${d.p.name} ${axName(d.p, d.ax)} <b>${d.p.fmt(vx(q))}</b><br>Lap ${fmtT(q.r.f)} <span>${q.r.f - b < 0.005 ? 'best' : '+' + (q.r.f - b).toFixed(2) + ' s'}</span><br>` +
       (q.r.sec ? track.sectorNames.map((n, k) => `<span>S${k + 1}</span> ${q.r.sec[k].toFixed(2)}`).join(' · ') + '<br>' : '') +
       `<span>${q.r.conv ? 'settled after ' + q.r.laps + ' laps' : 'not settled in ' + q.r.laps + ' laps'}${q.r.off ? ' · left the track' : ''}</span>`;
     tip.hidden = false;
