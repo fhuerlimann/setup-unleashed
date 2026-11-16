@@ -1447,7 +1447,8 @@ const mat = {
   asphalt: lift(new THREE.MeshStandardMaterial({ color: 0x6f767d, vertexColors: true, roughness: 0.95 })),
   paint: lift(M({ color: 0xf1f3f5, roughness: 0.8 })),
   kerb: lift(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 })),
-  lineMat: new THREE.MeshBasicMaterial({ color: 0x1971c2, transparent: true, opacity: 0.55, depthWrite: false }),
+  // racing line: pulled towards the camera in the depth test (more than the asphalt is), so it stays on top far down the track
+  lineMat: new THREE.MeshBasicMaterial({ color: 0x1971c2, transparent: true, opacity: 0.55, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -12 }),
   road: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 }),
   shell: new THREE.MeshStandardMaterial({ color: 0x5c7cfa, transparent: true, opacity: 0.10, depthWrite: false, side: THREE.DoubleSide, roughness: 0.3 }),
   shellLine: new THREE.LineBasicMaterial({ color: 0x5c7cfa, transparent: true, opacity: 0.45 })
@@ -1538,7 +1539,7 @@ let lineMesh = null, showLine = false;
 function buildLineMesh() {
   if (lineMesh) { trackG.remove(lineMesh); lineMesh.geometry.dispose(); }
   lineMesh = ribbon(i => [line.off[i] - 0.12, line.off[i] + 0.12], 0.014, mat.lineMat);
-  lineMesh.receiveShadow = false; lineMesh.visible = showLine;
+  lineMesh.receiveShadow = false; lineMesh.renderOrder = 3; lineMesh.visible = showLine;
 }
 const boardGeo = new THREE.BoxGeometry(0.1, 1.2, 0.8);
 let mapBox = null;
