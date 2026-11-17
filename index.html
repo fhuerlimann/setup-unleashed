@@ -83,12 +83,12 @@ body {
 button.chip { cursor: pointer; }
 button.chip:disabled { opacity: 0.4; cursor: default; }
 button.chip[aria-pressed="true"] { background: var(--sel-bg); color: var(--sel-fg); border-color: var(--sel-line); }
-.dial { position: absolute; left: 12px; bottom: 10px; display: flex; gap: 4px 16px; font-family: var(--f-mono); font-size: 12px; pointer-events: none; flex-wrap: wrap; align-items: baseline; max-width: calc(100% - 190px); padding: 7px 10px; border: 1px solid var(--line); border-radius: 3px; background: color-mix(in srgb, var(--panel) 78%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.dial { position: absolute; left: 12px; bottom: 10px; display: flex; gap: 4px 16px; font-family: var(--f-mono); font-size: 12px; pointer-events: none; flex-wrap: wrap; align-items: baseline; max-width: calc(100% - 190px); padding: 7px 10px; text-shadow: 0 0 3px var(--bg), 0 0 6px var(--bg), 0 1px 2px var(--bg); }
 .status { position: absolute; right: 12px; bottom: 170px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: 55%; pointer-events: none; }
 .dial span { color: var(--muted); }
 .dial b { font-weight: 500; font-variant-numeric: tabular-nums; }
 .dial .big b { font-size: 20px; }
-#map { position: absolute; right: 12px; bottom: 10px; width: 150px; height: 150px; border-radius: 4px; background: color-mix(in srgb, var(--panel) 80%, transparent); border: 1px solid var(--line); pointer-events: none; }
+#map { position: absolute; right: 12px; bottom: 10px; width: 150px; height: 150px; background: transparent; pointer-events: none; }
 /* thumb controls (touch screens): drag the left pad sideways to steer, the right pad up for throttle and down to brake */
 .touch { position: absolute; inset: auto 0 0 0; display: none; justify-content: flex-end; align-items: flex-end; padding: 0 max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); pointer-events: none; }
 .pad { position: relative; pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; border: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 62%, transparent); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
@@ -291,8 +291,6 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
         <div class="circ lo"><span>Last </span><b id="dLast">–</b></div>
         <div class="circ lo"><span>Best </span><b id="dBest">–</b></div>
         <div class="circ"><span>Δ best </span><b id="dDelta">–</b></div>
-        <div class="lo"><span>Roll </span><b id="dRoll">0.00</b>°</div>
-        <div class="lo"><span>Pitch (+ nose up) </span><b id="dPitch">0.00</b>°</div>
         <div class="rig"><span>Heave </span><b id="dHeave">0</b> mm</div>
       </div>
       <canvas id="map" aria-label="Track map with the car's position"></canvas>
@@ -410,6 +408,8 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
         <label class="check"><input type="checkbox" value="steer"> Caster, bump steer</label>
         <label class="check"><input type="checkbox" value="tb"> Tire pressure, brake bias</label>
         <label class="check"><input type="checkbox" value="diff"> Diff, traction control</label>
+        <label class="check"><input type="checkbox" value="geo"> Ride height, roll centres</label>
+        <label class="check"><input type="checkbox" value="anti"> Anti-dive, anti-squat</label>
       </div>
       <div class="ctl">
         <label for="optGen">Rounds</label><output id="optGenOut">12</output>
@@ -452,6 +452,8 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
       <div class="label"><span>Setup</span></div>
       <div class="axhead"><span>Front</span><span>Rear</span></div>
       <div id="paramsRide" class="group"></div>
+      <div class="sublabel">Ride height &amp; geometry</div>
+      <div id="paramsGeo" class="group"></div>
       <div class="sublabel">Alignment</div>
       <div id="paramsAlign" class="group"></div>
       <div class="sublabel">Tires, brakes, electronics &amp; diff</div>
@@ -478,7 +480,7 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
         <small class="note" id="ggLap"></small>
       </div>
       <div class="gauge">
-        <div class="ctl"><span class="t">Front share of roll stiffness</span><output id="lltdOut">55%</output>
+        <div class="ctl"><span class="t">Front share of load transfer</span><output id="lltdOut">55%</output>
           <small id="lltdNote">Front weight 47%.</small></div>
         <div class="bar"><em id="lltdWeight"></em><i id="lltdMark"></i></div>
         <div class="bar-scale"><span>30% · oversteer</span><span>understeer · 80%</span></div>
@@ -489,9 +491,14 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
         <dt>Ride frequency</dt><dd id="sRideF"></dd><dd id="sRideR"></dd>
         <dt>Damping ratio ζ</dt><dd id="sZF"></dd><dd id="sZR"></dd>
         <dt>Roll stiffness</dt><dd id="sRollF"></dd><dd id="sRollR"></dd>
+        <dt>Roll centre</dt><dd id="sRcF"></dd><dd id="sRcR"></dd>
+        <dt>Geometric load transfer</dt><dd id="sGeoF"></dd><dd id="sGeoR"></dd>
+        <dt>Motion ratio</dt><dd id="sMrF"></dd><dd id="sMrR"></dd>
       </dl>
       <div class="ctl"><span class="t">Roll gradient</span><output id="rgOut">1.5 °/g</output>
-        <small>Body roll per g of cornering, including tire squash.</small></div>
+        <small>Body roll per g of cornering, including tire squash. Only the load transfer above the roll axis rolls the body.</small></div>
+      <div class="ctl"><span class="t">Centre of gravity</span><output id="cgOut">420 mm</output>
+        <small>Lower with less ride height.</small></div>
     </div>
 
     <div class="group rig" data-tab="drive">
@@ -558,11 +565,11 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line)
         <dt>Drive · power</dt><dd>Rear · 220 kW</dd>
         <dt>Steering</dt><dd>Rack, 100% Ackermann</dd>
         <dt>Tires</dt><dd>Wider at the rear</dd>
-        <dt>Motion ratio</dt><dd id="sMR">0.70</dd>
+        <dt>Motion ratio F / R</dt><dd id="sMR">0.70</dd>
         <dt>Travel (bump / rebound)</dt><dd>70 / 80 mm</dd>
         <dt>Circuit length</dt><dd id="sLen">–</dd>
       </dl>
-      <p class="note">The body heaves, pitches and rolls on four independent corners, each with a coil spring and a 2-way damper acting through the motion ratio squared. An anti-roll bar per axle resists only the difference between left and right travel. On the circuit the car also moves in the plane: each tire makes cornering force from its slip angle, capped by its vertical load, and a tire with more load gains grip less than in proportion, which is why load transfer, and so the springs and bars, changes the balance. Each wheel turns at its own speed: brake and drive torque against the road give a slip ratio, and slip ratio and slip angle share one grip budget, so a locked or spinning wheel has almost no cornering grip left. Grip also depends on camber against the road: a cornering tire grips best leaning slightly into the turn, so body roll, the wishbones' camber gain, static camber and caster all matter. The front uprights turn about the axis through their ball joints, driven by a rack and tie rods; toe and bump steer add to each wheel's steering angle. The circuit has gentle hills, rough patches and raised kerbs; the grass sits 3 cm below the track and grips about half as well. A car that leaves the track is put back on the racing line half a second later, and that lap does not count. The car has per-wheel ABS, traction control and a limited-slip rear differential, all adjustable. Not modelled: aero, camber thrust and kingpin inclination. Roll and pitch centres sit at ground level.</p>
+      <p class="note">The body heaves, pitches and rolls on four independent corners, each with a coil spring and a 2-way damper acting through the motion ratio squared. An anti-roll bar per axle resists only the difference between left and right travel. On the circuit the car also moves in the plane: each tire makes cornering force from its slip angle, capped by its vertical load, and a tire with more load gains grip less than in proportion, which is why load transfer, and so the springs and bars, changes the balance. Each wheel turns at its own speed: brake and drive torque against the road give a slip ratio, and slip ratio and slip angle share one grip budget, so a locked or spinning wheel has almost no cornering grip left. Grip also depends on camber against the road: a cornering tire grips best leaning slightly into the turn, so body roll, the wishbones' camber gain, static camber and caster all matter. The front uprights turn about the axis through their ball joints, driven by a rack and tie rods; toe and bump steer add to each wheel's steering angle. The circuit has gentle hills, rough patches and raised kerbs; the grass sits 3 cm below the track and grips about half as well. A car that leaves the track is put back on the racing line half a second later, and that lap does not count. The car has per-wheel ABS, traction control and a limited-slip rear differential, all adjustable. The wishbone geometry is solved in front view and stored as tables against wheel travel: camber gain, a motion ratio that changes with travel, and the line from the contact patch through the arms' instant centre. Side force follows that line into the body, so each axle's roll centre carries part of the load transfer through the arms (instantly, without rolling the body) and jacks the body up; the roll centre moves as the suspension travels. Anti-dive and anti-squat do the same for braking and drive force in side view. Ride height moves the static position on these tables and lowers or raises the centre of gravity. Each tire builds up its slip angle over a relaxation length of 35 cm, and has a tread and a carcass temperature: sliding heats the tread, flexing heats the carcass, airflow cools both. Grip peaks around 90 °C, and the pressure you set is the hot pressure at that temperature. Not modelled: aero, camber thrust, kingpin inclination and compliance.</p>
     </div>
   </aside>
 </div>
@@ -628,10 +635,10 @@ const DRIVE = { power: 220000, maxF: 7500, brakeG: 1.35, brakeFront: 0.62, drag:
 const STEER_MAX = 0.40;
 // slip angle (rad) where each tire's cornering force peaks: C·atan(B·α) = π/2
 // slip angle (rad) where each tire's cornering force peaks: C·atan(B·α) = π/2 (B scales with tire pressure)
-const slipPeak = i => Math.tan(Math.PI / (2 * TIRE.C)) / (TIRE.B * (CORNERS[i].ax === 'R' ? TIRE.rearB : 1) * presB(CORNERS[i].ax));
+const slipPeak = i => Math.tan(Math.PI / (2 * TIRE.C)) / (TIRE.B * (CORNERS[i].ax === 'R' ? TIRE.rearB : 1) * pB[i]);
 const setup = {
-  F: { k: 60000, cb: 3000, cr: 6600, arb: 25000, camber: -2.5, toe: 0.0, caster: 6, bs: 0, p: 2.0, bias: 62, abs: 1, tc: 1, lsd: 30 },
-  R: { k: 65000, cb: 3200, cr: 7000, arb: 14000, camber: -1.8, toe: 0.2, p: 2.0 }
+  F: { k: 60000, cb: 3000, cr: 6600, arb: 25000, camber: -2.5, toe: 0.0, caster: 6, bs: 0, p: 2.0, bias: 62, abs: 1, tc: 1, lsd: 30, rh: 0, rc: 50, anti: 20 },
+  R: { k: 65000, cb: 3200, cr: 7000, arb: 14000, camber: -1.8, toe: 0.2, p: 2.0, rh: 0, rc: 60, anti: 30 }
 };
 // tire pressure (bar, hot): higher pressure makes the tire stiffer vertically and in cornering (it responds quicker),
 // but the grip peaks at P0 and falls off either side as the contact patch gets worse
@@ -639,7 +646,25 @@ const P0 = 2.0;
 const presK = ax => 0.45 + 0.55 * (setup[ax].p ?? P0) / P0;                              // vertical stiffness factor
 const presB = ax => Math.pow((setup[ax].p ?? P0) / P0, 0.35);                            // cornering stiffness factor
 const presMu = ax => Math.max(0.85, 1 - 0.06 * (((setup[ax].p ?? P0) - P0) / 0.4) ** 2);  // peak grip factor
-const ktOf = i => CAR.kt * presK(CORNERS[i].ax);
+// tire temperature, per tire: a tread surface layer heated by sliding and a carcass heated by flexing. Grip peaks when
+// the tread is near THERM.opt; the set pressure is the hot pressure at THERM.opt, so a cooler tire runs below it
+const THERM = { opt: 90, width: 45, start: 80, amb: 25, road: 35, Cs: 3500, Cc: 9000, Gsc: 180, slideIn: 0.9, roll: 0.02 };
+const RELAX = 0.35;   // tire relaxation length (m): how far it rolls before its cornering force catches up with a new slip angle
+const pW = [P0, P0, P0, P0], pK = [1, 1, 1, 1], pB = [1, 1, 1, 1], pMu = [1, 1, 1, 1], tMu = [1, 1, 1, 1];
+function tireFactors() {
+  for (let i = 0; i < 4; i++) {
+    const ax = CORNERS[i].ax, p = (setup[ax].p ?? P0) * (273 + st.Tc[i]) / (273 + THERM.opt);
+    pW[i] = p; pK[i] = 0.45 + 0.55 * p / P0; pB[i] = Math.pow(p / P0, 0.35); pMu[i] = Math.max(0.85, 1 - 0.06 * ((p - P0) / 0.4) ** 2);
+    const te = 0.7 * st.Ts[i] + 0.3 * st.Tc[i];
+    tMu[i] = Math.max(0.8, 1 - 0.1 * ((te - THERM.opt) / THERM.width) ** 2);
+  }
+}
+function heatTire(i, qSlide, Fz, v, dt) {
+  const T = THERM, Ts = st.Ts[i], Tc = st.Tc[i], hAir = 5 + 1.4 * v, hRoad = Fz > 0 ? 25 : 0;
+  st.Ts[i] += (T.slideIn * qSlide + T.Gsc * (Tc - Ts) - hAir * (Ts - T.amb) - hRoad * (Ts - T.road)) / T.Cs * dt;
+  st.Tc[i] += (T.roll * Math.max(0, Fz) * v + T.Gsc * (Ts - Tc) - 0.4 * hAir * (Tc - T.amb)) / T.Cc * dt;
+}
+const ktOf = i => CAR.kt * pK[i];
 const brakeFront = () => (setup.F.bias ?? 62) / 100;
 let MR = 0.7;
 let mode = 'circuit';
@@ -657,12 +682,14 @@ function envelope(x, s) {
 
 const st = {
   z: 0, vz: 0, az: 0, ph: 0, vph: 0, th: 0, vth: 0, dist: 0, t: 0,
-  zu: [0, 0, 0, 0], vu: [0, 0, 0, 0], h: [0, 0, 0, 0], hp: [0, 0, 0, 0], Ft: CORNERS.map(c => c.Ft0), s: [0, 0, 0, 0], stop: false,
+  zu: [0, 0, 0, 0], vu: [0, 0, 0, 0], h: [0, 0, 0, 0], hp: [0, 0, 0, 0], Ft: CORNERS.map(c => c.Ft0), s: [0, 0, 0, 0], fg: [0, 0, 0, 0], stop: false,
   X: 0, Z: 0, psi: 0, u: 0, w: 0, r: 0, delta: 0, thr: 0, brk: 0, ax: 0, ay: 0,
   slip: [0, 0, 0, 0], dw: [0, 0, 0, 0], spin: [0, 0, 0, 0], surf: [1, 1, 1, 1], gam: [0, 0, 0, 0], camF: [1, 1, 1, 1],
   fb: [[0, 0], [0, 0], [0, 0], [0, 0]], use: [[0, 0], [0, 0], [0, 0], [0, 0]], D: [1, 1, 1, 1], tIdx: [0, 0, 0, 0],
   om: [0, 0, 0, 0], kap: [0, 0, 0, 0],  // wheel spin speed (rad/s) and longitudinal slip ratio
-  absF: [1, 1, 1, 1], tcF: 1, lsdT: 0     // ABS pressure factor per wheel, traction-control torque factor, differential locking torque
+  absF: [1, 1, 1, 1], tcF: 1, lsdT: 0,    // ABS pressure factor per wheel, traction-control torque factor, differential locking torque
+  alf: [0, 0, 0, 0],                      // slip angle the tire has built up so far (relaxation length)
+  Ts: [80, 80, 80, 80], Tc: [80, 80, 80, 80]   // tread surface and carcass temperature (°C)
 };
 // wheels: longitudinal slip peaks at KAP_PEAK; beyond it the tire slides (locks under braking, spins under power)
 const KAP_PEAK = 0.10, TAN_PK = Math.tan(Math.PI / (2 * 1.5)), IW = [1.2, 1.2, 1.6, 1.6];
@@ -962,17 +989,17 @@ buildLine();
 
 // ---------- Planar dynamics ----------
 const ackermann = (delta, l) => { const t = Math.tan(delta); return Math.atan(CAR.L * t / (CAR.L + l * t)); };
-let camberTab = null;
-function camberAt(s) {               // kinematic camber (deg) from the wishbone geometry, table lookup
-  if (!camberTab) return 0;
-  const f = (Math.max(-0.12, Math.min(0.11, s)) + 0.12) * 1000, i = Math.floor(f), t = f - i;
-  return camberTab[i] + (camberTab[Math.min(camberTab.length - 1, i + 1)] - camberTab[i]) * t;
-}
+// per-axle kinematic tables against wheel travel s (m, + = bump), 1 mm steps from -120 to +111 mm (see Corner kinematics)
+let GEO = { F: null, R: null };
+const tabAt = (T, s) => { const f = (Math.max(-0.12, Math.min(0.11, s)) + 0.12) * 1000, i = Math.floor(f), t = f - i; return T[i] + (T[Math.min(T.length - 1, i + 1)] - T[i]) * t; };
+// kinematic camber change (deg) from the static position: static camber is set at the car's ride height
+function camberAt(i, s) { const g = GEO[CORNERS[i].ax]; return g ? tabAt(g.cam, s) - g.cam0 : 0; }
+const s0Of = i => GEO[CORNERS[i].ax] ? GEO[CORNERS[i].ax].s0 : 0;
 function wheelSteer(i) {
   const c = CORNERS[i], ax = setup[c.ax];
   let d = c.ax === 'F' ? ackermann(st.delta, c.l) : 0;
   d += c.sg * ax.toe / 2 * DEG;                                 // toe-in turns each wheel toward the centreline
-  if (c.ax === 'F') d += c.sg * (ax.bs / 0.025) * st.s[i] * DEG; // bump steer: toe change per metre of travel
+  if (c.ax === 'F') d += c.sg * (ax.bs / 0.025) * (st.s[i] - s0Of(i)) * DEG; // bump steer: toe change per metre of travel from static
   return d;
 }
 function planar(dt) {
@@ -997,10 +1024,12 @@ function planar(dt) {
     const vx = u + r * c.l, vz = w - r * c.x;
     const cd = Math.cos(dw), sd = Math.sin(dw);
     const vlong = vx * cd - vz * sd, vlat = vx * sd + vz * cd;
-    const alpha = Math.atan2(vlat, Math.max(Math.abs(vlong), 3));
+    // the tire's slip angle lags the wheel's: it builds up over the relaxation length as the tire rolls
+    st.alf[i] += (Math.atan2(vlat, Math.max(Math.abs(vlong), 3)) - st.alf[i]) * Math.min(1, Math.max(Math.abs(vlong), 1) * dt / RELAX);
+    const alpha = st.alf[i];
     st.slip[i] = alpha;
     // camber against the road (deg, negative = top leaning toward the car): geometry + static + roll + caster
-    const gam = camberAt(st.s[i]) + ax.camber + c.sg * st.ph / DEG - (c.ax === 'F' ? c.sg * Math.sin(ax.caster * DEG) * dw / DEG : 0);
+    const gam = camberAt(i, st.s[i]) + ax.camber + c.sg * st.ph / DEG - (c.ax === 'F' ? c.sg * Math.sin(ax.caster * DEG) * dw / DEG : 0);
     st.gam[i] = gam;
     // a cornering tire wants its top leaning toward the turn centre, in proportion to how hard it corners
     const inward = Math.max(-1, Math.min(1, st.fb[i][1] * -c.sg / Math.max(1, st.D[i])));
@@ -1008,7 +1037,7 @@ function planar(dt) {
     const camF = Math.max(0.75, 1 - TIRE.camK * dc * dc);
     st.camF[i] = camF;
     const Fz = st.Ft[i];
-    const mu = Math.max(0.3, TIRE.mu0 - TIRE.ls * (Fz / c.Ft0 - 1)) * st.surf[i] * (rear ? TIRE.rearMu : 1) * camF * presMu(c.ax);
+    const mu = Math.max(0.3, TIRE.mu0 - TIRE.ls * (Fz / c.Ft0 - 1)) * st.surf[i] * (rear ? TIRE.rearMu : 1) * camF * pMu[i] * tMu[i];
     const D = Fz * mu; st.D[i] = D;
     // combined slip: sideways slip (angle) and lengthways slip (ratio), each relative to its peak, share one grip curve.
     // A locked or spinning wheel has a huge slip ratio, so almost nothing is left for cornering.
@@ -1017,6 +1046,8 @@ function planar(dt) {
     let fl = 0, fy = 0;
     if (D > 0 && sig > 1e-6) { const F = D * Math.sin(TIRE.C * Math.atan(TAN_PK * sig)); fl = F * sx / sig; fy = -F * sy / sig; }
     st.use[i][0] = D > 0 ? fy / D : 0; st.use[i][1] = D > 0 ? fl / D : 0;
+    // heat: the power lost to sliding (force times sliding speed, sideways and lengthways) and to flexing the carcass
+    heatTire(i, Math.abs(fy) * Math.abs(vlong * Math.tan(alpha)) + Math.abs(fl) * Math.abs(st.om[i] * R - vlong), Fz, Math.abs(vlong), dt);
     // wheel spin: drive torque (rear, open differential) minus the road's reaction, then the brake pulls it towards a stop
     let om = st.om[i] + (Tdrive[i] - fl * R) / IW[i] * dt;
     // ABS, per wheel: release this wheel's brake quickly when it slips past the target, reapply it more slowly
@@ -1071,9 +1102,12 @@ let contactK = 0;
 function resetContact() { for (let i = 0; i < 4; i++) cNow[i] = cPrev[i] = st.h[i]; contactK = 0; }
 function vertical(dt) {
   st.stop = false;
+  if (contactK === 0) { geoSync(); tireFactors(); }
   if (mode === 'circuit' && contactK === 0) for (let i = 0; i < 4; i++) { cPrev[i] = cNow[i]; cNow[i] = circuitContact(i); }
   const frac = contactK / CONTACT_EVERY;
   contactK = (contactK + 1) % CONTACT_EVERY;
+  // side-view swing-arm slopes: 100 % anti-dive cancels the front's share of brake pitch, 100 % anti-squat the drive squat
+  const hcg = cgHeight(), antiF = (setup.F.anti ?? 0) / 100 * hcg / CAR.L / Math.max(0.3, brakeFront()), antiR = (setup.R.anti ?? 0) / 100 * hcg / CAR.L;
   for (let i = 0; i < 4; i++) {
     const c = CORNERS[i], ax = setup[c.ax];
     st.hp[i] = st.h[i];
@@ -1082,14 +1116,22 @@ function vertical(dt) {
     const vb = st.vz + c.x * st.vth - c.l * st.vph;
     const s = st.zu[i] - zb, sd = st.vu[i] - vb;
     st.s[i] = s;
-    let f = c.Fs + ax.k * MR * MR * s + (sd > 0 ? ax.cb : ax.cr) * MR * MR * sd;
+    const gm = GEO[c.ax], mr = tabAt(gm.mr, s);
+    // spring: preloaded so the car sits at its ride height, then compressed through the linkage (motion ratio varies with
+    // travel); damper through the motion ratio squared
+    let f = (c.Fs / gm.mr0 + ax.k * (gm.len0 - tabAt(gm.len, s))) * mr + (sd > 0 ? ax.cb : ax.cr) * mr * mr * sd;
+    // geometric load transfer: the wishbones carry part of the tire's side force (through the roll centre) and of its
+    // brake and drive force (anti-dive, anti-squat) straight into the body, without going through the spring
+    const fg = -st.fb[i][1] * c.sg * tabAt(gm.jk, s) + (c.ax === 'F' ? -antiF : antiR) * st.fb[i][0];
+    f += fg; st.fg[i] = fg;
     if (s > BUMP) { const e = s - BUMP; f += 250000 * e + 8e6 * e * e; st.stop = true; }
     if (s < -REB) { const e = -REB - s; f -= 300000 * e + 8e6 * e * e; st.stop = true; }
     F[i] = f;
   }
   const dF = (st.s[0] - st.s[1]) * setup.F.arb, dR = (st.s[2] - st.s[3]) * setup.R.arb;
   F[0] += dF; F[1] -= dF; F[2] += dR; F[3] -= dR;
-  let Fz = 0, Mp = CAR.ms * lonG * G * CAR.h, Mr = -CAR.ms * latG * G * CAR.h;
+  const hc = cgHeight();
+  let Fz = 0, Mp = CAR.ms * lonG * G * hc, Mr = -CAR.ms * latG * G * hc;
   for (let i = 0; i < 4; i++) {
     const c = CORNERS[i];
     Fz += F[i]; Mp += F[i] * c.x; Mr += -F[i] * c.l;
@@ -1114,7 +1156,13 @@ function step(dt) {
     st.dist += v * dt;
     latG += (latCmd - latG) * Math.min(1, dt / 0.15);
     lonG += (lonCmd - lonG) * Math.min(1, dt / 0.15);
-    for (let i = 0; i < 4; i++) { st.spin[i] -= v / R * dt; st.dw[i] = wheelSteer(i); st.slip[i] = 0; }
+    const Fl = MASS * latG * G, Fx = MASS * lonG * G, Fsum = Math.max(1, st.Ft[0] + st.Ft[1] + st.Ft[2] + st.Ft[3]), bf = brakeFront();
+    for (let i = 0; i < 4; i++) {
+      st.spin[i] -= v / R * dt; st.dw[i] = wheelSteer(i); st.slip[i] = 0;
+      const front = CORNERS[i].ax === 'F';
+      st.fb[i][1] = Fl * Math.max(0, st.Ft[i]) / Fsum;
+      st.fb[i][0] = Fx >= 0 ? (front ? 0 : Fx / 2) : Fx * (front ? bf : 1 - bf) / 2;
+    }
   }
   vertical(dt);
 }
@@ -1311,13 +1359,16 @@ function drive(dt) {
 }
 
 function settleVertical() {
+  geoSync(); tireFactors();
   st.vz = st.vph = st.vth = 0;
+  const zb = [0, 0, 0, 0];
   for (let i = 0; i < 4; i++) {
     st.h[i] = st.hp[i] = mode === 'rig' ? envelope(CORNERS[i].x, CORNERS[i].side) : circuitContact(i);
-    st.zu[i] = st.h[i]; st.vu[i] = 0; st.Ft[i] = CORNERS[i].Ft0; st.s[i] = 0;
+    st.zu[i] = st.h[i]; st.vu[i] = 0; st.Ft[i] = CORNERS[i].Ft0; st.s[i] = s0Of(i); st.fg[i] = 0;
+    zb[i] = st.h[i] - st.s[i];                      // the body sits at its ride height above each wheel
   }
-  const hl = (st.h[0] + st.h[2]) / 2, hr = (st.h[1] + st.h[3]) / 2, hf = (st.h[0] + st.h[1]) / 2, hb = (st.h[2] + st.h[3]) / 2;
-  st.z = (hl + hr) / 2; st.th = (hf - hb) / CAR.L; st.ph = (hl - hr) / (2 * CAR.half);
+  const zf = (zb[0] + zb[1]) / 2, zr = (zb[2] + zb[3]) / 2;
+  st.th = (zf - zr) / CAR.L; st.z = zf - A * st.th; st.ph = ((zb[0] + zb[2]) - (zb[1] + zb[3])) / (4 * CAR.half);
   resetContact();
 }
 function placeCar(idx, speed) {
@@ -1325,7 +1376,7 @@ function placeCar(idx, speed) {
   st.X = line.x[idx]; st.Z = line.z[idx];
   const n = (idx + 3) % N; st.psi = Math.atan2(-(line.z[n] - line.z[idx]), line.x[n] - line.x[idx]);
   st.u = speed; st.w = st.r = 0; st.delta = 0; steerIn = 0; pedal.braking = false; st.thr = st.brk = 0;
-  for (let i = 0; i < 4; i++) { st.om[i] = speed / R; st.kap[i] = 0; st.absF[i] = 1; }
+  for (let i = 0; i < 4; i++) { st.om[i] = speed / R; st.kap[i] = 0; st.absF[i] = 1; st.alf[i] = 0; }
   st.tcF = 1; st.lsdT = 0;
   pedal.brkCap = pedal.thrCap = 1;
   for (let i = 0; i < 4; i++) { st.tIdx[i] = idx; st.fb[i][0] = st.fb[i][1] = 0; }
@@ -1358,7 +1409,7 @@ function putBack() {
 function reset() {
   st.dist = 0; st.t = 0; st.az = 0;
   st.u = st.w = st.r = st.delta = st.thr = st.brk = st.ax = st.ay = 0; latG = lonG = 0; steerIn = 0;
-  CORNERS.forEach((c, i) => { st.slip[i] = 0; st.surf[i] = 1; });
+  CORNERS.forEach((c, i) => { st.slip[i] = 0; st.surf[i] = 1; st.alf[i] = 0; st.Ts[i] = st.Tc[i] = THERM.start; });
   forgetLearning(); speedProfile(); aid.over = aid.under = aid.holdO = aid.holdU = 0;
   if (mode === 'circuit') placeCar(track.N - 40, 12);
   else { st.X = st.Z = st.psi = 0; settleVertical(); }
@@ -1369,17 +1420,22 @@ function reset() {
 }
 
 // ---------- Corner kinematics (corner frame: y up, z outboard; wheel centre at y=0, z=0.75 at design) ----------
-const Pl = { y: -0.13, z: 0.18 }, Pu = { y: 0.14, z: 0.30 };
+// The lower arm's inner pivot height is set per axle to give the chosen roll-centre height; the ball joints stay put
+const Pl0 = { y: -0.13, z: 0.18 }, Pu = { y: 0.14, z: 0.30 };
 const LBJ0 = { y: -0.13, z: 0.60 }, UBJ0 = { y: 0.17, z: 0.60 };
-const Ll = Math.hypot(LBJ0.y - Pl.y, LBJ0.z - Pl.z);
 const Lu = Math.hypot(UBJ0.y - Pu.y, UBJ0.z - Pu.z);
 const Lup = Math.hypot(UBJ0.y - LBJ0.y, UBJ0.z - LBJ0.z);
-const theta0 = Math.atan2(LBJ0.y - Pl.y, LBJ0.z - Pl.z);
 const SPRING_TOP = { y: 0.42, z: 0.37 }, SPRING_FRAC = 0.72, ARB_FRAC = 0.6;
 const CZ = CAR.half - 0.75;
 const RACK = { x: -0.13, y: -0.03, z: 0.25 };
+const NTAB = 232;
 
-function geomAt(theta) {
+function makeArms(dly) {
+  const Pl = { y: Pl0.y + dly, z: Pl0.z };
+  return { Pl, Ll: Math.hypot(LBJ0.y - Pl.y, LBJ0.z - Pl.z), theta0: Math.atan2(LBJ0.y - Pl.y, LBJ0.z - Pl.z) };
+}
+function geomAt(gm, theta) {
+  const { Pl, Ll } = gm;
   const L = { y: Pl.y + Ll * Math.sin(theta), z: Pl.z + Ll * Math.cos(theta) };
   const dy = L.y - Pu.y, dz = L.z - Pu.z, d = Math.hypot(dy, dz);
   const a = (Lu * Lu - Lup * Lup + d * d) / (2 * d);
@@ -1391,17 +1447,55 @@ function geomAt(theta) {
   const W = { y: L.y + uy * 0.13 - uz * 0.15, z: L.z + uz * 0.13 + uy * 0.15 };
   return { L, U, W, alpha: Math.atan2(uz, uy) };
 }
-function solve(s) {
-  let lo = theta0 - 0.6, hi = theta0 + 0.6;
-  for (let i = 0; i < 36; i++) { const m = (lo + hi) / 2; if (geomAt(m).W.y < s) lo = m; else hi = m; }
-  const g = geomAt((lo + hi) / 2);
-  g.A = { y: Pl.y + SPRING_FRAC * (g.L.y - Pl.y), z: Pl.z + SPRING_FRAC * (g.L.z - Pl.z) };
+function solve(s, gm) {
+  let lo = gm.theta0 - 0.6, hi = gm.theta0 + 0.6;
+  for (let i = 0; i < 36; i++) { const m = (lo + hi) / 2; if (geomAt(gm, m).W.y < s) lo = m; else hi = m; }
+  const g = geomAt(gm, (lo + hi) / 2);
+  g.A = { y: gm.Pl.y + SPRING_FRAC * (g.L.y - gm.Pl.y), z: gm.Pl.z + SPRING_FRAC * (g.L.z - gm.Pl.z) };
   g.springLen = Math.hypot(SPRING_TOP.y - g.A.y, SPRING_TOP.z - g.A.z);
   return g;
 }
-MR = (solve(-0.005).springLen - solve(0.005).springLen) / 0.01;
-camberTab = new Float32Array(232);
-for (let i = 0; i < 232; i++) camberTab[i] = solve(i / 1000 - 0.12).alpha / DEG;
+// front view: the arms' lines meet at the instant centre; the line from the contact patch through it is the path the
+// side force takes into the body. Its slope is the jacking ratio; where it crosses the car's centreline is the roll centre
+function jackSlope(gm, g) {
+  const d1y = g.L.y - gm.Pl.y, d1z = g.L.z - gm.Pl.z, d2y = g.U.y - Pu.y, d2z = g.U.z - Pu.z;
+  const cpy = g.W.y - R, cpz = g.W.z, den = d1y * d2z - d1z * d2y;
+  if (Math.abs(den) < 1e-9) return -d1y / d1z;      // parallel arms: the line runs parallel to them
+  const t = ((Pu.y - gm.Pl.y) * d2z - (Pu.z - gm.Pl.z) * d2y) / den;
+  const icy = gm.Pl.y + t * d1y, icz = gm.Pl.z + t * d1z;
+  return (icy - cpy) / (cpz - icz);
+}
+const rcHeight = (gm, s) => { const g = solve(s, gm); return jackSlope(gm, g) * (g.W.z + CZ); };
+function buildGeo(rc, rh) {
+  // lower inner pivot height that puts the roll centre at rc (mm) at the reference ride height
+  let lo = -0.05, hi = 0.07;
+  for (let k = 0; k < 28; k++) { const m = (lo + hi) / 2; if (rcHeight(makeArms(m), 0) * 1000 < rc) lo = m; else hi = m; }
+  const gm = makeArms((lo + hi) / 2);
+  gm.cam = new Float32Array(NTAB); gm.len = new Float32Array(NTAB); gm.mr = new Float32Array(NTAB);
+  gm.jk = new Float32Array(NTAB); gm.rch = new Float32Array(NTAB);
+  for (let i = 0; i < NTAB; i++) {
+    const g = solve(i / 1000 - 0.12, gm), k = jackSlope(gm, g);
+    gm.cam[i] = g.alpha / DEG; gm.len[i] = g.springLen; gm.jk[i] = k; gm.rch[i] = k * (g.W.z + CZ);
+  }
+  for (let i = 0; i < NTAB; i++) {
+    const a = Math.max(0, i - 1), b = Math.min(NTAB - 1, i + 1);
+    gm.mr[i] = (gm.len[a] - gm.len[b]) / ((b - a) / 1000);   // spring shortening per metre of wheel bump
+  }
+  gm.rc = rc; gm.rh = rh; gm.s0 = -rh / 1000;
+  gm.cam0 = tabAt(gm.cam, gm.s0); gm.len0 = tabAt(gm.len, gm.s0); gm.mr0 = tabAt(gm.mr, gm.s0); gm.rc0 = tabAt(gm.rch, gm.s0);
+  return gm;
+}
+// rebuild an axle's tables when its roll-centre height or ride height changes
+function geoSync() {
+  for (const ax of ['F', 'R']) {
+    const S = setup[ax], rc = S.rc ?? 50, rh = S.rh ?? 0, g = GEO[ax];
+    if (!g || g.rc !== rc || g.rh !== rh) GEO[ax] = buildGeo(rc, rh);
+  }
+}
+// centre-of-gravity height: the body sits lower (or higher) by the ride-height change, interpolated to the CG
+const cgHeight = () => CAR.h - (B * GEO.F.s0 + A * GEO.R.s0) / CAR.L;
+geoSync();
+MR = GEO.F.mr0;
 
 // ---------- Three.js scene ----------
 const ARM_TIP = new THREE.Vector3(-0.13, 0.10, 0.0);
@@ -1675,7 +1769,7 @@ function buildCorner(c) {
   const g = new THREE.Group();
   g.position.set(c.x, 0, sg * CZ); g.scale.z = sg;
   chassis.add(g);
-  const o = { g, c, sg };
+  const o = { g, c, sg }, lowBush = []; o.lowBush = lowBush;
   // mounting brackets belong to the chassis: they hide with it (the pivot bushings stay)
   const br = new THREE.Group(); g.add(br); brackets.push(br);
   box(br, 0.40, 0.36, 0.06, mat.frame, 0, 0.26, 0.24);
@@ -1683,7 +1777,7 @@ function buildCorner(c) {
   box(br, 0.46, 0.06, 0.08, mat.frame, 0, -0.13, 0.17);
   [0.15, -0.15].forEach(x => {
     box(br, 0.05, 0.06, 0.06, mat.frame, x, 0.14, 0.29);
-    [Pl, Pu].forEach(p => { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.06, 16), mat.dark); b.rotation.z = Math.PI / 2; b.position.set(x, p.y, p.z); g.add(b); });
+    [Pl0, Pu].forEach((p, k) => { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.06, 16), mat.dark); b.rotation.z = Math.PI / 2; b.position.set(x, p.y, p.z); g.add(b); if (k === 0) lowBush.push(b); });
   });
   o.arms = [rod(g, 0.016, mat.steel), rod(g, 0.016, mat.steel), rod(g, 0.014, mat.steel), rod(g, 0.014, mat.steel)];
   const sph = (r, parent) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat.dark); parent.add(m); return m; };
@@ -1857,8 +1951,9 @@ function pose() {
   const bsLift = -setup.F.bs * 0.06;   // bump steer comes from tie-rod height: show it by moving the rack
   corners.forEach((o, i) => {
     const s = THREE.MathUtils.clamp(st.s[i], -0.12, 0.11);
-    const g = solve(s); geoms[i] = g;
+    const gm = GEO[o.c.ax], Pl = gm.Pl, g = solve(s, gm); geoms[i] = g;
     const ax = setup[o.c.ax];
+    o.lowBush.forEach(b => { b.position.y = Pl.y; });
     const casterX = o.c.ax === 'F' ? -Math.sin(ax.caster * DEG) * Lup : 0;   // caster: upper ball joint sits behind the lower
     const Uv = new THREE.Vector3(casterX, g.U.y, g.U.z), Lv = V(0, g.L);
     place(o.arms[0], V(0.15, Pl), Lv); place(o.arms[1], V(-0.15, Pl), Lv);
@@ -1871,7 +1966,7 @@ function pose() {
     place(o.upright, new THREE.Vector3(), Ur);
     place(o.spindle, Ur.clone().multiplyScalar(0.43), Wr);
     o.camber.position.copy(Wr);
-    o.camber.rotation.set(g.alpha + ax.camber * DEG, 0, 0);
+    o.camber.rotation.set(g.alpha + (ax.camber - gm.cam0) * DEG, 0, 0);
     o.spin.rotation.z = st.spin[i];
     deformTire(o, st.Ft[i] / ktOf(i), st.spin[i]);
     place(o.steerArm, Ur.clone().multiplyScalar(0.35), ARM_TIP);
@@ -2067,7 +2162,7 @@ function ggTrack() {
 function drawGG() {
   const dpr = window.devicePixelRatio || 1, W = ggEl.clientWidth, H = ggEl.clientHeight;
   if (!W || !H) return;
-  if (ggEl.width !== Math.round(W * dpr)) { ggEl.width = Math.round(W * dpr); ggEl.height = Math.round(H * dpr); }
+  if (ggEl.width !== Math.round(W * dpr) || ggEl.height !== Math.round(H * dpr)) { ggEl.width = Math.round(W * dpr); ggEl.height = Math.round(H * dpr); }
   gx.setTransform(dpr, 0, 0, dpr, 0, 0); gx.clearRect(0, 0, W, H);
   const cs = getComputedStyle(document.documentElement), tok = n => cs.getPropertyValue(n).trim();
   const ink = tok('--ink'), muted = tok('--muted'), lineC = tok('--line'), acc = tok('--accent'), coral = tok('--coral');
@@ -2122,7 +2217,7 @@ function drawMap() {
   if (mode !== 'circuit') return;
   const dpr = window.devicePixelRatio || 1, W = mapEl.clientWidth, H = mapEl.clientHeight;
   if (!W) return;
-  if (mapEl.width !== Math.round(W * dpr)) { mapEl.width = Math.round(W * dpr); mapEl.height = Math.round(H * dpr); }
+  if (mapEl.width !== Math.round(W * dpr) || mapEl.height !== Math.round(H * dpr)) { mapEl.width = Math.round(W * dpr); mapEl.height = Math.round(H * dpr); }
   const { pts, N } = track, { x0, x1, z0, z1 } = mapBox;
   const sc = Math.min((W - 16) / (x1 - x0), (H - 16) / (z1 - z0));
   const ox = (W - (x1 - x0) * sc) / 2, oz = (H - (z1 - z0) * sc) / 2;
@@ -2150,6 +2245,9 @@ const PARAMS = [
   { key: 'cb', name: 'Bump damping', unit: 'N·s/m', min: 0, max: 12000, step: 100, scale: 1, fmt: v => v.toFixed(0), tip: 'Damping while the wheel moves up (compression). More: firmer over bumps and quicker weight transfer; too much and the tire skips over bumps.', box: 'paramsRide' },
   { key: 'cr', name: 'Rebound damping', unit: 'N·s/m', min: 0, max: 20000, step: 100, scale: 1, fmt: v => v.toFixed(0), tip: 'Damping while the wheel moves down (extension). Sets how fast the body settles after a bump and how fast load comes off a tire.', box: 'paramsRide' },
   { key: 'arb', name: 'Anti-roll bar', unit: 'kN/m at the wheel', min: 0, max: 80, step: 1, scale: 1000, fmt: v => v.toFixed(0), cls: 'arb', tip: 'Resists body roll only, not bumps that hit both wheels. Stiffer at one end moves grip away from that end: a stiffer rear bar means more oversteer.', box: 'paramsRide' },
+  { key: 'rh', name: 'Ride height', unit: 'mm from reference, − = lower', min: -30, max: 20, step: 1, scale: 1, fmt: v => (v > 0 ? '+' : '') + v.toFixed(0), box: 'paramsGeo', tip: 'Lowering the car lowers its centre of gravity, so there is less load transfer in total. But it leaves less travel before the bump stops (70 mm at the reference height), and on this geometry the roll centre drops faster than the body. Front lower than rear (rake) moves the roll axis and shifts the balance.' },
+  { key: 'rc', name: 'Roll-centre height', unit: 'mm, at reference ride height', min: 0, max: 150, step: 5, scale: 1, fmt: v => v.toFixed(0), box: 'paramsGeo', tip: 'Set by the height of the lower wishbone\'s inner pickup points. A higher roll centre sends more of that axle\'s load transfer straight through the arms: a quicker response and less roll, but more jacking and less grip at that end. It also changes camber gain. Higher at the front: more understeer. Higher at the rear: more oversteer.' },
+  { key: 'anti', name: 'Anti-dive / anti-squat', unit: '% · front anti-dive, rear anti-squat', min: 0, max: 80, step: 5, scale: 1, fmt: v => v.toFixed(0) + '%', box: 'paramsGeo', tip: 'Side-view angle of the wishbones. Part of the braking force (front) or drive force (rear) pushes the body up through the arms instead of compressing the springs, so the nose dives and the tail squats less. Too much: the suspension gets stiff and jittery over bumps under braking and power.' },
   { key: 'camber', name: 'Camber', unit: '° static, − = top in', min: -4, max: 1, step: 0.1, scale: 1, fmt: v => v.toFixed(1) + '°', tip: 'Wheel tilt; negative means the top leans in. Some negative camber keeps the tire flat on the road when the body rolls in a corner.', box: 'paramsAlign' },
   { key: 'toe', name: 'Toe', unit: '° total, + = toe-in', min: -0.6, max: 0.6, step: 0.02, scale: 1, fmt: v => (v > 0 ? '+' : '') + v.toFixed(2) + '°', tip: 'Wheels pointing in (+) or out (−) when seen from above. Front toe-out sharpens turn-in; rear toe-in adds stability.', box: 'paramsAlign' },
   { key: 'caster', name: 'Caster', unit: '°', min: 0, max: 10, step: 0.5, scale: 1, fmt: v => v.toFixed(1) + '°', only: 'F', tip: 'Backward tilt of the steering axis. More caster adds negative camber to the outside front wheel as you steer.', box: 'paramsAlign' },
@@ -2205,11 +2303,12 @@ function refreshSpecs() {
   if (typeof updateSetupState === 'function' && $('setupState')) try { updateSetupState(); } catch (e) {}
   eachParam((p, ax) => { $(p.key + ax + 'o').textContent = p.fmt(setup[ax][p.key] / p.scale); });
   const res = {};
+  geoSync();
   ['F', 'R'].forEach(ax => {
-    const S = setup[ax], kw = S.k * MR * MR;
+    const S = setup[ax], mr = GEO[ax].mr0, kw = S.k * mr * mr;
     const mc = CAR.ms * (ax === 'F' ? CAR.wf : 1 - CAR.wf) / 2;
     const ktA = CAR.kt * presK(ax), kr = kw * ktA / (kw + ktA);
-    const z = (S.cb + S.cr) / 2 * MR * MR / (2 * Math.sqrt(kw * mc));
+    const z = (S.cb + S.cr) / 2 * mr * mr / (2 * Math.sqrt(kw * mc));
     const Ksusp = 2 * CAR.half * CAR.half * (kw + 2 * S.arb);
     const Ktire = 2 * CAR.half * CAR.half * ktA;
     const Kroll = Ksusp * Ktire / (Ksusp + Ktire);
@@ -2219,7 +2318,15 @@ function refreshSpecs() {
     $('sZ' + ax).textContent = z.toFixed(2);
     $('sRoll' + ax).textContent = (Ksusp * Math.PI / 180 / 1000).toFixed(2) + ' kN·m/°';
   });
-  const lltd = res.F.Kroll / (res.F.Kroll + res.R.Kroll);
+  // load transfer: the part above the roll axis goes through springs and bars (split by roll stiffness), each axle's
+  // own share of the side force times its roll-centre height goes through the arms
+  const hc = cgHeight(), rcF = GEO.F.rc0, rcR = GEO.R.rc0, hra = (B * rcF + A * rcR) / CAR.L, Kt = res.F.Kroll + res.R.Kroll;
+  const wF = CAR.wf, elF = (hc - hra) * res.F.Kroll / Kt, elR = (hc - hra) * res.R.Kroll / Kt, geF = wF * rcF, geR = (1 - wF) * rcR;
+  const lltd = (elF + geF) / hc;
+  $('sRcF').textContent = (rcF * 1000).toFixed(0) + ' mm'; $('sRcR').textContent = (rcR * 1000).toFixed(0) + ' mm';
+  $('sGeoF').textContent = (geF / (elF + geF) * 100).toFixed(0) + '%'; $('sGeoR').textContent = (geR / (elR + geR) * 100).toFixed(0) + '%';
+  $('sMrF').textContent = GEO.F.mr0.toFixed(2); $('sMrR').textContent = GEO.R.mr0.toFixed(2);
+  $('cgOut').textContent = (hc * 1000).toFixed(0) + ' mm';
   $('lltdOut').textContent = (lltd * 100).toFixed(0) + '%';
   const pos = v => Math.max(0, Math.min(100, (v - 0.3) / 0.5 * 100)) + '%';
   $('lltdMark').style.left = pos(lltd);
@@ -2227,9 +2334,9 @@ function refreshSpecs() {
   const diff = (lltd - CAR.wf) * 100;
   $('lltdNote').textContent = 'Front weight ' + (CAR.wf * 100).toFixed(0) + '%. ' +
     (Math.abs(diff) < 3 ? 'Close to neutral.' : diff > 0 ? 'Above it: the front tires carry more of the load transfer, so the car leans toward understeer.' : 'Below it: the rear tires carry more of the load transfer, so the car leans toward oversteer.');
-  const rg = CAR.ms * G * CAR.h / (res.F.Kroll + res.R.Kroll) * 180 / Math.PI;
+  const rg = CAR.ms * G * Math.max(0, hc - hra) / Kt * 180 / Math.PI;
   $('rgOut').textContent = rg.toFixed(2) + ' °/g';
-  $('sMR').textContent = MR.toFixed(2);
+  $('sMR').textContent = GEO.F.mr0.toFixed(2) + ' / ' + GEO.R.mr0.toFixed(2);
   $('vOut').textContent = speedKmh + ' km/h';
   $('sLen').textContent = Math.round(track.len) + ' m';
 }
@@ -2325,7 +2432,7 @@ const setupSlot = () => ['A', 'B'].find(n => store.setups[n] && setupKey(store.s
 const setupSummary = o => `Springs ${o.F.k / 1000}/${o.R.k / 1000} kN/m · bars ${o.F.arb / 1000}/${o.R.arb / 1000} · camber ${o.F.camber}/${o.R.camber}° · toe ${o.F.toe}/${o.R.toe}° · bump ${o.F.cb}/${o.R.cb} · rebound ${o.F.cr}/${o.R.cr} · tires ${o.F.p ?? 2}/${o.R.p ?? 2} bar · brake bias ${o.F.bias ?? 62}% · ABS ${(o.F.abs ?? 1) ? 'on' : 'off'} · TC ${o.F.tc ?? 1} · diff ${o.F.lsd ?? 30}%`;
 const DRIVER_TAG = { line: 'Line', correct: 'Slides', learn: 'Learn' };
 // autopilot version (older autopilot laps are marked †, they are not comparable)
-const DRIVER_VER = 5;   // 2 = planned braking and throttle; 3 = braking learned to the limit, power-limited acceleration; 4 = wheel lock-up and spin; 5 = ABS, traction control and a limited-slip diff
+const DRIVER_VER = 6;   // 2 = planned braking and throttle; 3 = braking learned to the limit, power-limited acceleration; 4 = wheel lock-up and spin; 5 = ABS, traction control and a limited-slip diff; 6 = roll centres, anti-dive/squat, ride height, tire relaxation and temperature
 const oldAuto = l => l.drv !== 'You' && (l.ver || 1) < DRIVER_VER;
 const fmtS = t => t == null ? '–' : t.toFixed(2);
 let bestShown = null, seenLapStart = null;
@@ -2670,7 +2777,7 @@ function makeCMA(m0, sigma0) {
   };
   return S;
 }
-const OPT_GROUPS = { k: [['k']], arb: [['arb']], camber: [['camber']], toe: [['toe']], damp: [['cb'], ['cr']], steer: [['caster', 'F'], ['bs', 'F']], tb: [['p'], ['bias', 'F']], diff: [['lsd', 'F'], ['tc', 'F']] };
+const OPT_GROUPS = { k: [['k']], arb: [['arb']], camber: [['camber']], toe: [['toe']], damp: [['cb'], ['cr']], steer: [['caster', 'F'], ['bs', 'F']], tb: [['p'], ['bias', 'F']], diff: [['lsd', 'F'], ['tc', 'F']], geo: [['rh'], ['rc']], anti: [['anti']] };
 const POOL = () => workerOK ? Math.max(1, Math.min(6, (navigator.hardwareConcurrency || 4) - 1)) : 1;
 let opt = null;
 function optDims() {
@@ -3073,8 +3180,6 @@ function frame(now) {
   renderer.render(scene, camera);
   if (uiTick % 2 === 0) { drawChart(); drawGG(); }
   if (++uiTick % 4 === 0) {
-    $('dRoll').textContent = (st.ph / DEG).toFixed(2);
-    $('dPitch').textContent = (st.th / DEG).toFixed(2);
     $('dHeave').textContent = (st.z * 1000 >= 0 ? '+' : '') + (st.z * 1000).toFixed(0);
     const cs = getComputedStyle(document.documentElement), t = n => cs.getPropertyValue(n).trim();
     const tok = { line: t('--line'), muted: t('--muted'), load: t('--load'), accent: t('--accent'), warn: t('--warn') };
@@ -3112,13 +3217,15 @@ function frame(now) {
       ui.el.classList.toggle('lift', lift);
       ui.load.textContent = (st.Ft[i] / 1000).toFixed(2) + ' kN';
       ui.bar.style.width = Math.min(100, st.Ft[i] / (2 * c.Ft0) * 100) + '%';
-      let info = 'travel ' + (st.s[i] >= 0 ? '+' : '') + (st.s[i] * 1000).toFixed(0) + ' mm';
+      const trv = (st.s[i] - GEO[c.ax].s0) * 1000;
+      let info = 'travel ' + (trv >= 0 ? '+' : '') + trv.toFixed(0) + ' mm';
       if (mode === 'circuit') {
         info += '\ncamber ' + st.gam[i].toFixed(1) + '° · grip ' + (st.camF[i] * 100).toFixed(0) + '%';
         info += '\nslip ' + (st.slip[i] / DEG).toFixed(1) + '° · ' + (st.kap[i] * 100).toFixed(0) + '% · steer ' + (st.dw[i] / DEG).toFixed(1) + '°';
+        info += '\ntire ' + st.Ts[i].toFixed(0) + ' / ' + st.Tc[i].toFixed(0) + ' °C · ' + pW[i].toFixed(2) + ' bar · grip ' + (tMu[i] * 100).toFixed(0) + '%';
         drawCircle(ui, i, tok);
       } else {
-        const g = geoms[i]; info += ' · camber ' + (g ? (g.alpha / DEG + setup[c.ax].camber).toFixed(1) : '0.0') + '°';
+        const g = geoms[i]; info += ' · camber ' + (g ? (g.alpha / DEG - GEO[c.ax].cam0 + setup[c.ax].camber).toFixed(1) : '0.0') + '°';
       }
       ui.info.textContent = info;
       ui.cv.hidden = mode !== 'circuit';
